@@ -1,0 +1,292 @@
+import { Hono } from 'hono';
+import { setCookie, deleteCookie } from 'hono/cookie';
+import { createApiHandlers, createAuthManager, type ApiContext } from '@static-admin/api';
+import { authMiddleware, requireAuth, type AuthVariables } from './middleware';
+import type { StaticAdminHonoOptions } from './types';
+
+const DEFAULT_SESSION_COOKIE = 'static-admin-session';
+const DEFAULT_API_BASE_PATH = '/api/admin';
+
+/**
+ * Create a Hono app for static-admin
+ *
+ * @example
+ * ```ts
+ * import { Hono } from 'hono';
+ * import { staticAdmin } from '@static-admin/hono';
+ * import config from './static-admin.config';
+ *
+ * const app = new Hono();
+ * app.route('/admin', staticAdmin({ config }));
+ *
+ * export default app;
+ * ```
+ */
+export function staticAdmin(options: StaticAdminHonoOptions): Hono {
+  const {
+    config,
+    rootDir = process.cwd(),
+    sessionCookie = DEFAULT_SESSION_COOKIE,
+  } = options;
+
+  const app = new Hono<{ Variables: AuthVariables }>();
+  const handlers = createApiHandlers();
+
+  // Initialize auth if configured
+  let auth: ReturnType<typeof createAuthManager> | null = null;
+  if (config.auth) {
+    auth = createAuthManager({
+      database: config.auth.database,
+      sessionExpiry: config.auth.sessionExpiry,
+    });
+
+    // Initialize auth tables on startup
+    auth.initialize().catch(console.error);
+
+    // Add auth middleware
+    app.use('*', authMiddleware({ auth, sessionCookie }));
+  }
+
+  // Helper to create API context
+  const createContext = (c: Hono extends Hono<infer E> ? E : never): ApiContext => ({
+    config,
+    auth: auth!,
+    rootDir,
+    user: (c as unknown as { var: AuthVariables }).var?.user,
+  });
+
+  // ===== Auth Routes =====
+  if (auth) {
+    // Login
+    app.post('/api/auth/login', async (c) => {
+      const body = await c.req.json();
+      const ctx: ApiContext = {
+        config,
+        auth: auth!,
+        rootDir,
+      };
+
+      const result = await handlers.login(ctx, {
+        params: {},
+        query: {},
+        body,
+      });
+
+      if (result.success && result.data) {
+        const data = result.data as { sessionId: string; expiresAt: string };
+        setCookie(c, sessionCookie, data.sessionId, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'Lax',
+          path: '/',
+          expires: new Date(data.expiresAt),
+        });
+      }
+
+      return c.json(result);
+    });
+
+    // Logout
+    app.post('/api/auth/logout', async (c) => {
+      const sessionId = c.get('sessionId');
+
+      if (sessionId && auth) {
+        await auth.logout(sessionId);
+      }
+
+      deleteCookie(c, sessionCookie);
+
+      return c.json({ success: true, data: { loggedOut: true } });
+    });
+
+    // Get current user
+    app.get('/api/auth/me', requireAuth(), async (c) => {
+      const user = c.get('user');
+      return c.json({ success: true, data: user });
+    });
+  }
+
+  // ===== Schema Routes =====
+  app.get('/api/schema', async (c) => {
+    const ctx: ApiContext = {
+      config,
+      auth: auth!,
+      rootDir,
+      user: c.get('user'),
+    };
+
+    const result = await handlers.getSchema(ctx, {
+      params: {},
+      query: {},
+      body: null,
+    });
+
+    return c.json(result);
+  });
+
+  // ===== Collection Routes =====
+  app.get('/api/collections', async (c) => {
+    const ctx: ApiContext = {
+      config,
+      auth: auth!,
+      rootDir,
+      user: c.get('user'),
+    };
+
+    const result = await handlers.listCollections(ctx, {
+      params: {},
+      query: {},
+      body: null,
+    });
+
+    return c.json(result);
+  });
+
+  app.get('/api/collections/:collection', async (c) => {
+    const ctx: ApiContext = {
+      config,
+      auth: auth!,
+      rootDir,
+      user: c.get('user'),
+    };
+
+    const result = await handlers.getCollection(ctx, {
+      params: { collection: c.req.param('collection') },
+      query: {},
+      body: null,
+    });
+
+    return c.json(result);
+  });
+
+  // ===== Entry Routes =====
+  // List entries
+  app.get('/api/entries/:collection', async (c) => {
+    const ctx: ApiContext = {
+      config,
+      auth: auth!,
+      rootDir,
+      user: c.get('user'),
+    };
+
+    const result = await handlers.listEntries(ctx, {
+      params: { collection: c.req.param('collection') },
+      query: c.req.query() as Record<string, string>,
+      body: null,
+    });
+
+    return c.json(result);
+  });
+
+  // Get single entry
+  app.get('/api/entries/:collection/:slug', async (c) => {
+    const ctx: ApiContext = {
+      config,
+      auth: auth!,
+      rootDir,
+      user: c.get('user'),
+    };
+
+    const result = await handlers.getEntry(ctx, {
+      params: {
+        collection: c.req.param('collection'),
+        slug: c.req.param('slug'),
+      },
+      query: {},
+      body: null,
+    });
+
+    return c.json(result);
+  });
+
+  // Create entry (requires auth)
+  const protectedRoutes = auth ? requireAuth() : async (_: unknown, next: () => Promise<void>) => next();
+
+  app.post('/api/entries/:collection', protectedRoutes, async (c) => {
+    const ctx: ApiContext = {
+      config,
+      auth: auth!,
+      rootDir,
+      user: c.get('user'),
+    };
+
+    const body = await c.req.json();
+
+    const result = await handlers.createEntry(ctx, {
+      params: { collection: c.req.param('collection') },
+      query: {},
+      body,
+    });
+
+    return c.json(result, result.success ? 201 : 400);
+  });
+
+  // Update entry (requires auth)
+  app.put('/api/entries/:collection/:slug', protectedRoutes, async (c) => {
+    const ctx: ApiContext = {
+      config,
+      auth: auth!,
+      rootDir,
+      user: c.get('user'),
+    };
+
+    const body = await c.req.json();
+
+    const result = await handlers.updateEntry(ctx, {
+      params: {
+        collection: c.req.param('collection'),
+        slug: c.req.param('slug'),
+      },
+      query: {},
+      body,
+    });
+
+    return c.json(result);
+  });
+
+  // Delete entry (requires auth)
+  app.delete('/api/entries/:collection/:slug', protectedRoutes, async (c) => {
+    const ctx: ApiContext = {
+      config,
+      auth: auth!,
+      rootDir,
+      user: c.get('user'),
+    };
+
+    const result = await handlers.deleteEntry(ctx, {
+      params: {
+        collection: c.req.param('collection'),
+        slug: c.req.param('slug'),
+      },
+      query: {},
+      body: null,
+    });
+
+    return c.json(result);
+  });
+
+  // ===== Upload Routes =====
+  app.post('/api/upload/:collection/:slug', protectedRoutes, async (c) => {
+    const ctx: ApiContext = {
+      config,
+      auth: auth!,
+      rootDir,
+      user: c.get('user'),
+    };
+
+    const body = await c.req.json();
+
+    const result = await handlers.uploadImage(ctx, {
+      params: {
+        collection: c.req.param('collection'),
+        slug: c.req.param('slug'),
+      },
+      query: {},
+      body,
+    });
+
+    return c.json(result);
+  });
+
+  return app;
+}
