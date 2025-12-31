@@ -7,7 +7,7 @@ import { useAdmin, type UserRole } from '../../context/AdminContext';
 export function UserEditPage() {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
-  const { user: currentUser } = useAdmin();
+  const { user: currentUser, fetchApi } = useAdmin();
 
   const isNew = !id || id === 'new';
   const { user, isLoading, error, save, remove } = useUser(isNew ? undefined : id);
@@ -21,6 +21,7 @@ export function UserEditPage() {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isLastAdmin, setIsLastAdmin] = useState(false);
 
   // Initialize form data when user loads
   useEffect(() => {
@@ -34,6 +35,24 @@ export function UserEditPage() {
       });
     }
   }, [user]);
+
+  // Check if this user is the last admin
+  useEffect(() => {
+    if (!user || user.role !== 'admin') {
+      setIsLastAdmin(false);
+      return;
+    }
+
+    const checkAdminCount = async () => {
+      const result = await fetchApi<{ items: { role: string }[] }>('/users?limit=100');
+      if (result.success && result.data) {
+        const adminCount = result.data.items.filter((u) => u.role === 'admin').length;
+        setIsLastAdmin(adminCount <= 1);
+      }
+    };
+
+    checkAdminCount();
+  }, [user, fetchApi]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,13 +206,16 @@ export function UserEditPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, role: e.target.value as UserRole })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={isLastAdmin}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
                 <option value="editor">Editor</option>
                 <option value="admin">Admin</option>
               </select>
               <p className="text-xs text-gray-500 mt-1">
-                Admins can manage users. Editors can only manage content.
+                {isLastAdmin
+                  ? 'Cannot change role: This is the last admin user.'
+                  : 'Admins can manage users. Editors can only manage content.'}
               </p>
             </div>
 
