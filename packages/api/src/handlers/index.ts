@@ -2,6 +2,7 @@ import type { ApiHandlers, ApiContext, ApiRequest } from './types';
 import * as content from './content';
 import * as upload from './upload';
 import * as auth from './auth';
+import * as users from './users';
 
 export type { ApiHandlers, ApiContext, ApiRequest, ApiResponse } from './types';
 
@@ -35,5 +36,12 @@ export function createApiHandlers(): ApiHandlers {
     // Install
     checkInstall: auth.checkInstall,
     setupAdmin: auth.setupAdmin,
+
+    // Users
+    listUsers: users.listUsers,
+    getUser: users.getUser,
+    createUser: users.createUser,
+    updateUser: users.updateUser,
+    deleteUser: users.deleteUser,
   };
 }

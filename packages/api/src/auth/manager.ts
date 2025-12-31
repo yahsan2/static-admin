@@ -228,6 +228,84 @@ export function createAuthManager(config: AuthConfig): AuthManager {
       const stmt = db.prepare(`DELETE FROM users WHERE id = ?`);
       stmt.run(userId);
     },
+
+    async listUsers(options: { page?: number; limit?: number } = {}): Promise<{
+      items: User[];
+      pagination: { page: number; limit: number; total: number; totalPages: number };
+    }> {
+      const page = options.page ?? 1;
+      const limit = options.limit ?? 20;
+      const offset = (page - 1) * limit;
+
+      // Count total
+      const countStmt = db.prepare<[], { count: number }>(`SELECT COUNT(*) as count FROM users`);
+      const countResult = countStmt.get();
+      const total = countResult?.count ?? 0;
+
+      // Fetch paginated users
+      const stmt = db.prepare<[number, number], UserRow>(`
+        SELECT id, email, name, created_at
+        FROM users
+        ORDER BY created_at DESC
+        LIMIT ? OFFSET ?
+      `);
+      const rows = stmt.all(limit, offset);
+
+      return {
+        items: rows.map((row) => ({
+          id: row.id,
+          email: row.email,
+          name: row.name,
+          createdAt: new Date(row.created_at),
+        })),
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
+    },
+
+    async updateUser(userId: number, data: { name?: string; email?: string }): Promise<User> {
+      const updates: string[] = [];
+      const values: (string | number)[] = [];
+
+      if (data.name !== undefined) {
+        updates.push('name = ?');
+        values.push(data.name);
+      }
+      if (data.email !== undefined) {
+        updates.push('email = ?');
+        values.push(data.email);
+      }
+
+      if (updates.length === 0) {
+        const user = await this.getUserById(userId);
+        if (!user) {
+          throw new Error('User not found');
+        }
+        return user;
+      }
+
+      values.push(userId);
+      const stmt = db.prepare<(string | number)[], UserRow>(`
+        UPDATE users SET ${updates.join(', ')} WHERE id = ?
+        RETURNING id, email, name, created_at
+      `);
+      const row = stmt.get(...values);
+
+      if (!row) {
+        throw new Error('User not found');
+      }
+
+      return {
+        id: row.id,
+        email: row.email,
+        name: row.name,
+        createdAt: new Date(row.created_at),
+      };
+    },
   };
 }
 

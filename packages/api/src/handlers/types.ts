@@ -70,4 +70,11 @@ export interface ApiHandlers {
   // Install
   checkInstall: ApiHandler;
   setupAdmin: ApiHandler;
+
+  // Users
+  listUsers: ApiHandler;
+  getUser: ApiHandler;
+  createUser: ApiHandler;
+  updateUser: ApiHandler;
+  deleteUser: ApiHandler;
 }

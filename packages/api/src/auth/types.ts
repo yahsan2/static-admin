@@ -52,6 +52,15 @@ export interface AuthManager {
 
   /** Delete user */
   deleteUser(userId: number): Promise<void>;
+
+  /** List all users with pagination */
+  listUsers(options?: { page?: number; limit?: number }): Promise<{
+    items: User[];
+    pagination: { page: number; limit: number; total: number; totalPages: number };
+  }>;
+
+  /** Update user details (name, email) */
+  updateUser(userId: number, data: { name?: string; email?: string }): Promise<User>;
 }
 
 /** Auth config */
