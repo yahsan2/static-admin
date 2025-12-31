@@ -9,8 +9,8 @@ function honoDevServer(): Plugin {
     name: 'hono-dev-server',
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
-        // Only handle /api and /content routes
-        if (!req.url?.startsWith('/api') && !req.url?.startsWith('/content')) {
+        // Only handle /api, /public, and /content routes
+        if (!req.url?.startsWith('/api') && !req.url?.startsWith('/public') && !req.url?.startsWith('/content')) {
           return next();
         }
 

@@ -24,15 +24,23 @@ export type CollectionSchema<T, K extends string> = T extends {
   : Schema;
 
 /**
+ * Entry data (fields and content)
+ */
+export interface EntryData<S extends Schema = Schema> {
+  fields: InferSchemaType<S>;
+  content?: string;
+}
+
+/**
  * Entry returned from API
  */
 export interface Entry<S extends Schema = Schema> {
   slug: string;
-  fields: InferSchemaType<S>;
-  content?: string;
-  path: string;
-  createdAt?: string;
-  updatedAt?: string;
+  collection: string;
+  data: EntryData<S>;
+  filePath: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**

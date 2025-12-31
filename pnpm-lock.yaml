@@ -26,6 +26,9 @@ importers:
       '@hono/node-server':
         specifier: ^1.13.0
         version: 1.19.7(hono@4.11.3)
+      '@static-admin/client':
+        specifier: workspace:*
+        version: link:../packages/client
       '@static-admin/core':
         specifier: workspace:*
         version: link:../packages/core

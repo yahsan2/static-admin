@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",
+    "@static-admin/client": "workspace:*",
     "@static-admin/core": "workspace:*",
     "@static-admin/hono": "workspace:*",
     "@static-admin/ui": "workspace:*",

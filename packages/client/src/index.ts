@@ -10,6 +10,7 @@ export type {
   CollectionNames,
   CollectionSchema,
   Entry,
+  EntryData,
   ListApiResponse,
   SingleApiResponse,
   PaginationInfo,
