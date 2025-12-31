@@ -8,7 +8,6 @@ function honoDevServer(): Plugin {
   return {
     name: 'hono-dev-server',
     configureServer(server) {
-      // Dynamically import to avoid issues with ESM/CJS
       server.middlewares.use(async (req, res, next) => {
         // Only handle /api and /content routes
         if (!req.url?.startsWith('/api') && !req.url?.startsWith('/content')) {
@@ -16,8 +15,9 @@ function honoDevServer(): Plugin {
         }
 
         try {
-          // Lazy load the API app
-          const { createApiApp } = await import('./server/api');
+          // Use Vite's ssrLoadModule to properly load TypeScript modules
+          const apiModule = await server.ssrLoadModule('./server/api.ts');
+          const { createApiApp } = apiModule as { createApiApp: () => { fetch: (req: Request) => Promise<Response> } };
           const app = createApiApp();
 
           // Convert Node request to Fetch API Request
