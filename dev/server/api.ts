@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { serveStatic } from '@hono/node-server/serve-static';
-import { staticAdmin } from '@static-admin/hono';
+import { createStaticAdmin } from '@static-admin/hono';
 import { defineConfig, collection, fields } from '@static-admin/core';
 
 // Server-side config with full schema helpers
@@ -96,6 +96,9 @@ export const config = defineConfig({
   },
 });
 
+// Create static-admin instance
+const admin = createStaticAdmin({ config });
+
 // Create and export the Hono app
 export function createApiApp() {
   const app = new Hono();
@@ -103,8 +106,9 @@ export function createApiApp() {
   // Serve static files from content directory
   app.use('/content/*', serveStatic({ root: './' }));
 
-  // Mount static-admin API
-  app.route('/api', staticAdmin({ config }));
+  // Mount APIs
+  app.route('/api', admin.api());       // Admin API (CRUD, auth)
+  app.route('/public', admin.public()); // Public API (read-only)
 
   return app;
 }

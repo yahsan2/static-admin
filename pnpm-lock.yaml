@@ -126,6 +126,18 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
+  packages/client:
+    devDependencies:
+      '@static-admin/core':
+        specifier: workspace:*
+        version: link:../core
+      tsup:
+        specifier: ^8.3.0
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
   packages/cms:
     dependencies:
       '@static-admin/core':
@@ -169,6 +181,9 @@ importers:
       '@static-admin/api':
         specifier: workspace:*
         version: link:../api
+      '@static-admin/cms':
+        specifier: workspace:*
+        version: link:../cms
       '@static-admin/core':
         specifier: workspace:*
         version: link:../core

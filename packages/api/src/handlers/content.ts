@@ -9,26 +9,45 @@ import type { ApiContext, ApiRequest, ApiResponse, ApiHandler } from './types';
 
 /**
  * Get schema definition
+ * Returns full config in UI-compatible format
  */
 export const getSchema: ApiHandler = async (ctx) => {
   const { config } = ctx;
 
+  // Transform collections to UI format: { name: { kind, config } }
+  const collections: Record<string, { kind: 'collection'; config: unknown }> = {};
+  for (const [name, col] of Object.entries(config.collections ?? {})) {
+    collections[name] = {
+      kind: 'collection',
+      config: {
+        label: col.config.label,
+        description: col.config.description,
+        path: col.config.path,
+        slugField: col.config.slugField,
+        schema: col.config.schema,
+      },
+    };
+  }
+
+  // Transform singletons to UI format: { name: { kind, config } }
+  const singletons: Record<string, { kind: 'singleton'; config: unknown }> = {};
+  for (const [name, single] of Object.entries(config.singletons ?? {})) {
+    singletons[name] = {
+      kind: 'singleton',
+      config: {
+        label: single.config.label,
+        description: single.config.description,
+        path: single.config.path,
+        schema: single.config.schema,
+      },
+    };
+  }
+
   const schema = {
-    collections: Object.entries(config.collections ?? {}).map(([name, col]) => ({
-      name,
-      label: col.config.label,
-      description: col.config.description,
-      path: col.config.path,
-      slugField: col.config.slugField,
-      schema: col.config.schema,
-    })),
-    singletons: Object.entries(config.singletons ?? {}).map(([name, single]) => ({
-      name,
-      label: single.config.label,
-      description: single.config.description,
-      path: single.config.path,
-      schema: single.config.schema,
-    })),
+    storage: config.storage,
+    collections,
+    singletons,
+    publicSiteUrl: process.env.PUBLIC_SITE_URL,
   };
 
   return { success: true, data: schema };

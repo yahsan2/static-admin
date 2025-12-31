@@ -1,16 +1,18 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { serveStatic } from '@hono/node-server/serve-static';
-import { staticAdmin } from '@static-admin/hono';
+import { createStaticAdmin } from '@static-admin/hono';
 import config from '../static-admin.config';
 
+const admin = createStaticAdmin({ config });
 const app = new Hono();
 
 // Serve static files from content directory
 app.use('/content/*', serveStatic({ root: './' }));
 
-// Mount static-admin at /admin
-app.route('/admin', staticAdmin({ config }));
+// Mount APIs
+app.route('/admin', admin.api());     // Admin API
+app.route('/api', admin.public());    // Public API
 
 // Home page
 app.get('/', (c) => {

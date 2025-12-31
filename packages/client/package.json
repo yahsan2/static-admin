@@ -1,5 +1,5 @@
 {
-  "name": "@static-admin/hono",
+  "name": "@static-admin/client",
   "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -23,17 +23,13 @@
     "dev": "tsup --watch",
     "lint": "tsc --noEmit"
   },
-  "dependencies": {
-    "@static-admin/api": "workspace:*",
-    "@static-admin/cms": "workspace:*",
-    "@static-admin/core": "workspace:*"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "hono": "^4.6.0",
+    "@static-admin/core": "workspace:*",
     "tsup": "^8.3.0",
     "typescript": "^5.7.0"
   },
   "peerDependencies": {
-    "hono": "^4.0.0"
+    "@static-admin/core": "workspace:*"
   }
 }
