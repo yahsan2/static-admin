@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FileText, Settings, LogOut, Sun } from 'lucide-react';
+import { FileText, LogOut, ExternalLink } from 'lucide-react';
 import { useConfig } from '../../hooks/useConfig';
 import { useAdmin } from '../../context/AdminContext';
 import { cn } from '../../lib/utils';
@@ -31,9 +31,17 @@ export function Sidebar({ className }: SidebarProps) {
           </div>
           <span className="font-semibold text-gray-900">Static Admin</span>
         </div>
-        <button className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100">
-          <Sun className="w-4 h-4" />
-        </button>
+        {config.publicSiteUrl && (
+          <a
+            href={config.publicSiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100"
+            title="View published site"
+          >
+            <ExternalLink className="w-4 h-4" />
+          </a>
+        )}
       </div>
 
       {/* Dashboard link */}

@@ -8,6 +8,8 @@ const config: StaticAdminConfig = {
     database: './admin.db',
     sessionExpiry: 7 * 24 * 60 * 60,
   },
+  // 環境変数から公開サイトURLを取得（Vite: VITE_*, Next.js: NEXT_PUBLIC_* など利用側で設定）
+  publicSiteUrl: import.meta.env.VITE_PUBLIC_SITE_URL || 'http://localhost:3000',
   collections: {
     posts: {
       kind: 'collection',

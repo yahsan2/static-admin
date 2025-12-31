@@ -196,6 +196,8 @@ export interface StaticAdminConfig {
   auth?: AuthConfig;
   collections?: Record<string, Collection>;
   singletons?: Record<string, Singleton>;
+  /** Public site URL for preview links */
+  publicSiteUrl?: string;
 }
 
 /** Entry data with typed fields */
