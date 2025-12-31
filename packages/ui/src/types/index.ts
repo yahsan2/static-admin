@@ -193,7 +193,7 @@ export interface Singleton<S extends Schema = Schema> {
 export interface StaticAdminConfig {
   storage: StorageConfig;
   git?: GitConfig;
-  auth?: AuthConfig;
+  auth?: AuthConfig | boolean;
   collections?: Record<string, Collection>;
   singletons?: Record<string, Singleton>;
   /** Public site URL for preview links */

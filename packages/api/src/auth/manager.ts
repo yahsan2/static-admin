@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
-import type { AuthManager, User, Session, UserWithPassword, AuthConfig } from './types';
+import type { AuthManager, User, Session, UserWithPassword, AuthConfig, UserRole } from './types';
 
 const DEFAULT_SESSION_EXPIRY = 7 * 24 * 60 * 60; // 7 days in seconds
 
@@ -22,6 +22,7 @@ export function createAuthManager(config: AuthConfig): AuthManager {
           email TEXT UNIQUE NOT NULL,
           password_hash TEXT NOT NULL,
           name TEXT,
+          role TEXT DEFAULT 'editor' NOT NULL,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -35,6 +36,16 @@ export function createAuthManager(config: AuthConfig): AuthManager {
         CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
         CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
       `);
+
+      // Migration: Add role column if it doesn't exist
+      const tableInfo = db.prepare('PRAGMA table_info(users)').all() as { name: string }[];
+      const hasRoleColumn = tableInfo.some((col) => col.name === 'role');
+
+      if (!hasRoleColumn) {
+        db.exec(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'editor' NOT NULL`);
+        // Set first user as admin (for existing installations)
+        db.exec(`UPDATE users SET role = 'admin' WHERE id = (SELECT MIN(id) FROM users)`);
+      }
     },
 
     async hasAnyUsers(): Promise<boolean> {
@@ -43,20 +54,21 @@ export function createAuthManager(config: AuthConfig): AuthManager {
       return (row?.count ?? 0) > 0;
     },
 
-    async createUser(email: string, password: string, name?: string): Promise<User> {
+    async createUser(email: string, password: string, name?: string, role: UserRole = 'editor'): Promise<User> {
       const passwordHash = hashPassword(password);
 
       const stmt = db.prepare(`
-        INSERT INTO users (email, password_hash, name)
-        VALUES (?, ?, ?)
+        INSERT INTO users (email, password_hash, name, role)
+        VALUES (?, ?, ?, ?)
       `);
 
-      const result = stmt.run(email, passwordHash, name ?? null);
+      const result = stmt.run(email, passwordHash, name ?? null, role);
 
       return {
         id: result.lastInsertRowid as number,
         email,
         name: name ?? null,
+        role,
         createdAt: new Date(),
       };
     },
@@ -64,7 +76,7 @@ export function createAuthManager(config: AuthConfig): AuthManager {
     async login(email: string, password: string): Promise<{ user: User; session: Session }> {
       // Get user
       const stmt = db.prepare<[string], UserRow>(`
-        SELECT id, email, password_hash, name, created_at
+        SELECT id, email, password_hash, name, role, created_at
         FROM users
         WHERE email = ?
       `);
@@ -94,6 +106,7 @@ export function createAuthManager(config: AuthConfig): AuthManager {
           id: row.id,
           email: row.email,
           name: row.name,
+          role: row.role as UserRole,
           createdAt: new Date(row.created_at),
         },
         session: {
@@ -124,6 +137,7 @@ export function createAuthManager(config: AuthConfig): AuthManager {
           s.expires_at,
           u.email,
           u.name,
+          u.role,
           u.created_at
         FROM sessions s
         JOIN users u ON s.user_id = u.id
@@ -140,6 +154,7 @@ export function createAuthManager(config: AuthConfig): AuthManager {
           id: row.user_id,
           email: row.email,
           name: row.name,
+          role: row.role as UserRole,
           createdAt: new Date(row.created_at),
         },
         session: {
@@ -174,7 +189,7 @@ export function createAuthManager(config: AuthConfig): AuthManager {
 
     async getUserById(id: number): Promise<User | null> {
       const stmt = db.prepare<[number], UserRow>(`
-        SELECT id, email, name, created_at
+        SELECT id, email, name, role, created_at
         FROM users
         WHERE id = ?
       `);
@@ -188,13 +203,14 @@ export function createAuthManager(config: AuthConfig): AuthManager {
         id: row.id,
         email: row.email,
         name: row.name,
+        role: row.role as UserRole,
         createdAt: new Date(row.created_at),
       };
     },
 
     async getUserByEmail(email: string): Promise<User | null> {
       const stmt = db.prepare<[string], UserRow>(`
-        SELECT id, email, name, created_at
+        SELECT id, email, name, role, created_at
         FROM users
         WHERE email = ?
       `);
@@ -208,6 +224,7 @@ export function createAuthManager(config: AuthConfig): AuthManager {
         id: row.id,
         email: row.email,
         name: row.name,
+        role: row.role as UserRole,
         createdAt: new Date(row.created_at),
       };
     },
@@ -244,7 +261,7 @@ export function createAuthManager(config: AuthConfig): AuthManager {
 
       // Fetch paginated users
       const stmt = db.prepare<[number, number], UserRow>(`
-        SELECT id, email, name, created_at
+        SELECT id, email, name, role, created_at
         FROM users
         ORDER BY created_at DESC
         LIMIT ? OFFSET ?
@@ -256,6 +273,7 @@ export function createAuthManager(config: AuthConfig): AuthManager {
           id: row.id,
           email: row.email,
           name: row.name,
+          role: row.role as UserRole,
           createdAt: new Date(row.created_at),
         })),
         pagination: {
@@ -267,7 +285,18 @@ export function createAuthManager(config: AuthConfig): AuthManager {
       };
     },
 
-    async updateUser(userId: number, data: { name?: string; email?: string }): Promise<User> {
+    async updateUser(userId: number, data: { name?: string; email?: string; role?: UserRole }): Promise<User> {
+      // If changing role FROM admin, check we won't have 0 admins
+      if (data.role !== undefined) {
+        const currentUser = await this.getUserById(userId);
+        if (currentUser?.role === 'admin' && data.role !== 'admin') {
+          const adminCount = await this.countUsersByRole('admin');
+          if (adminCount <= 1) {
+            throw new Error('Cannot demote the last admin user');
+          }
+        }
+      }
+
       const updates: string[] = [];
       const values: (string | number)[] = [];
 
@@ -278,6 +307,10 @@ export function createAuthManager(config: AuthConfig): AuthManager {
       if (data.email !== undefined) {
         updates.push('email = ?');
         values.push(data.email);
+      }
+      if (data.role !== undefined) {
+        updates.push('role = ?');
+        values.push(data.role);
       }
 
       if (updates.length === 0) {
@@ -291,7 +324,7 @@ export function createAuthManager(config: AuthConfig): AuthManager {
       values.push(userId);
       const stmt = db.prepare<(string | number)[], UserRow>(`
         UPDATE users SET ${updates.join(', ')} WHERE id = ?
-        RETURNING id, email, name, created_at
+        RETURNING id, email, name, role, created_at
       `);
       const row = stmt.get(...values);
 
@@ -303,8 +336,17 @@ export function createAuthManager(config: AuthConfig): AuthManager {
         id: row.id,
         email: row.email,
         name: row.name,
+        role: row.role as UserRole,
         createdAt: new Date(row.created_at),
       };
+    },
+
+    async countUsersByRole(role: UserRole): Promise<number> {
+      const stmt = db.prepare<[string], { count: number }>(`
+        SELECT COUNT(*) as count FROM users WHERE role = ?
+      `);
+      const row = stmt.get(role);
+      return row?.count ?? 0;
     },
   };
 }
@@ -315,6 +357,7 @@ interface UserRow {
   email: string;
   password_hash: string;
   name: string | null;
+  role: string;
   created_at: string;
 }
 
@@ -330,6 +373,7 @@ interface SessionWithUserRow {
   expires_at: string;
   email: string;
   name: string | null;
+  role: string;
   created_at: string;
 }
 

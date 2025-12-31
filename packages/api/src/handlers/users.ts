@@ -1,10 +1,16 @@
 import type { ApiHandler } from './types';
+import type { UserRole } from '../auth/types';
 
 /**
  * List all users with pagination
  */
 export const listUsers: ApiHandler = async (ctx, req) => {
-  const { auth } = ctx;
+  const { auth, user: currentUser } = ctx;
+
+  // Admin only
+  if (currentUser?.role !== 'admin') {
+    return { success: false, error: 'Forbidden: Admin access required' };
+  }
 
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -28,7 +34,13 @@ export const listUsers: ApiHandler = async (ctx, req) => {
  * Get a single user by ID
  */
 export const getUser: ApiHandler = async (ctx, req) => {
-  const { auth } = ctx;
+  const { auth, user: currentUser } = ctx;
+
+  // Admin only
+  if (currentUser?.role !== 'admin') {
+    return { success: false, error: 'Forbidden: Admin access required' };
+  }
+
   const id = parseInt(req.params.id);
 
   if (isNaN(id)) {
@@ -55,15 +67,26 @@ export const getUser: ApiHandler = async (ctx, req) => {
  * Create a new user
  */
 export const createUser: ApiHandler = async (ctx, req) => {
-  const { auth } = ctx;
-  const body = req.body as { email?: string; password?: string; name?: string };
+  const { auth, user: currentUser } = ctx;
+
+  // Admin only
+  if (currentUser?.role !== 'admin') {
+    return { success: false, error: 'Forbidden: Admin access required' };
+  }
+
+  const body = req.body as { email?: string; password?: string; name?: string; role?: UserRole };
 
   if (!body.email || !body.password) {
     return { success: false, error: 'Email and password are required' };
   }
 
+  // Validate role if provided
+  if (body.role && !['admin', 'editor'].includes(body.role)) {
+    return { success: false, error: 'Invalid role. Must be admin or editor' };
+  }
+
   try {
-    const user = await auth.createUser(body.email, body.password, body.name);
+    const user = await auth.createUser(body.email, body.password, body.name, body.role || 'editor');
 
     return { success: true, data: user };
   } catch (error) {
@@ -78,19 +101,31 @@ export const createUser: ApiHandler = async (ctx, req) => {
  * Update a user
  */
 export const updateUser: ApiHandler = async (ctx, req) => {
-  const { auth } = ctx;
+  const { auth, user: currentUser } = ctx;
+
+  // Admin only
+  if (currentUser?.role !== 'admin') {
+    return { success: false, error: 'Forbidden: Admin access required' };
+  }
+
   const id = parseInt(req.params.id);
-  const body = req.body as { email?: string; name?: string; password?: string };
+  const body = req.body as { email?: string; name?: string; password?: string; role?: UserRole };
 
   if (isNaN(id)) {
     return { success: false, error: 'Invalid user ID' };
   }
 
+  // Validate role if provided
+  if (body.role && !['admin', 'editor'].includes(body.role)) {
+    return { success: false, error: 'Invalid role. Must be admin or editor' };
+  }
+
   try {
-    // Update user details (name, email)
+    // Update user details (name, email, role)
     const user = await auth.updateUser(id, {
       email: body.email,
       name: body.name,
+      role: body.role,
     });
 
     // Update password if provided
@@ -112,6 +147,12 @@ export const updateUser: ApiHandler = async (ctx, req) => {
  */
 export const deleteUser: ApiHandler = async (ctx, req) => {
   const { auth, user: currentUser } = ctx;
+
+  // Admin only
+  if (currentUser?.role !== 'admin') {
+    return { success: false, error: 'Forbidden: Admin access required' };
+  }
+
   const id = parseInt(req.params.id);
 
   if (isNaN(id)) {
@@ -128,6 +169,14 @@ export const deleteUser: ApiHandler = async (ctx, req) => {
     const user = await auth.getUserById(id);
     if (!user) {
       return { success: false, error: 'User not found' };
+    }
+
+    // Prevent deletion of last admin
+    if (user.role === 'admin') {
+      const adminCount = await auth.countUsersByRole('admin');
+      if (adminCount <= 1) {
+        return { success: false, error: 'Cannot delete the last admin user' };
+      }
     }
 
     await auth.deleteUser(id);

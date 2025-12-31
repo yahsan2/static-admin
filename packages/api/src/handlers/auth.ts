@@ -106,8 +106,8 @@ export const setupAdmin: ApiHandler = async (ctx, req) => {
       return { success: false, error: 'Admin user already exists' };
     }
 
-    // Create the admin user
-    const user = await auth.createUser(body.email, body.password, body.name);
+    // Create the admin user with 'admin' role
+    const user = await auth.createUser(body.email, body.password, body.name, 'admin');
 
     // Auto-login the newly created admin
     const result = await auth.login(body.email, body.password);

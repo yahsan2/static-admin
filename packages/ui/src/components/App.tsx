@@ -12,7 +12,7 @@ import { LoginPage } from './pages/LoginPage';
 import { InstallPage } from './pages/InstallPage';
 
 export interface StaticAdminAppProps {
-  config: StaticAdminConfig;
+  config?: StaticAdminConfig;
   basePath?: string;
   apiBasePath?: string;
 }
@@ -96,10 +96,19 @@ function AppRoutes() {
         {/* Edit existing entry */}
         <Route path="collections/:collection/:slug" element={<EntryEditPage />} />
 
-        {/* User management */}
-        <Route path="users" element={<UserListPage />} />
-        <Route path="users/new" element={<UserEditPage />} />
-        <Route path="users/:id" element={<UserEditPage />} />
+        {/* User management - Admin only */}
+        <Route
+          path="users"
+          element={user?.role === 'admin' ? <UserListPage /> : <Navigate to="/" replace />}
+        />
+        <Route
+          path="users/new"
+          element={user?.role === 'admin' ? <UserEditPage /> : <Navigate to="/" replace />}
+        />
+        <Route
+          path="users/:id"
+          element={user?.role === 'admin' ? <UserEditPage /> : <Navigate to="/" replace />}
+        />
       </Route>
 
       {/* Catch-all redirect */}

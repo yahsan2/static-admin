@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Trash2, ChevronRight } from 'lucide-react';
 import { useUser } from '../../hooks/useUser';
-import { useAdmin } from '../../context/AdminContext';
+import { useAdmin, type UserRole } from '../../context/AdminContext';
 
 export function UserEditPage() {
   const { id } = useParams<{ id?: string }>();
@@ -17,6 +17,7 @@ export function UserEditPage() {
     name: '',
     password: '',
     confirmPassword: '',
+    role: 'editor' as UserRole,
   });
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -29,6 +30,7 @@ export function UserEditPage() {
         name: user.name || '',
         password: '',
         confirmPassword: '',
+        role: user.role || 'editor',
       });
     }
   }, [user]);
@@ -52,9 +54,10 @@ export function UserEditPage() {
       return;
     }
 
-    const dataToSave: { email: string; name?: string; password?: string } = {
+    const dataToSave: { email: string; name?: string; password?: string; role?: UserRole } = {
       email: formData.email,
       name: formData.name || undefined,
+      role: formData.role,
     };
 
     // Only include password if provided
@@ -172,6 +175,26 @@ export function UserEditPage() {
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
+            </div>
+
+            {/* Role field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Role <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.role}
+                onChange={(e) =>
+                  setFormData({ ...formData, role: e.target.value as UserRole })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="editor">Editor</option>
+                <option value="admin">Admin</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Admins can manage users. Editors can only manage content.
+              </p>
             </div>
 
             {/* Password section */}

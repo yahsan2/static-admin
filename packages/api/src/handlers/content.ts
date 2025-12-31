@@ -48,6 +48,7 @@ export const getSchema: ApiHandler = async (ctx) => {
     collections,
     singletons,
     publicSiteUrl: process.env.PUBLIC_SITE_URL,
+    auth: !!config.auth, // Send boolean indicating if auth is enabled
   };
 
   return { success: true, data: schema };

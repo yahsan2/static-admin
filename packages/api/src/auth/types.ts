@@ -1,8 +1,12 @@
+/** User role */
+export type UserRole = 'admin' | 'editor';
+
 /** User record */
 export interface User {
   id: number;
   email: string;
   name: string | null;
+  role: UserRole;
   createdAt: Date;
 }
 
@@ -27,7 +31,7 @@ export interface AuthManager {
   hasAnyUsers(): Promise<boolean>;
 
   /** Create a new user */
-  createUser(email: string, password: string, name?: string): Promise<User>;
+  createUser(email: string, password: string, name?: string, role?: UserRole): Promise<User>;
 
   /** Authenticate user and create session */
   login(email: string, password: string): Promise<{ user: User; session: Session }>;
@@ -59,8 +63,11 @@ export interface AuthManager {
     pagination: { page: number; limit: number; total: number; totalPages: number };
   }>;
 
-  /** Update user details (name, email) */
-  updateUser(userId: number, data: { name?: string; email?: string }): Promise<User>;
+  /** Update user details (name, email, role) */
+  updateUser(userId: number, data: { name?: string; email?: string; role?: UserRole }): Promise<User>;
+
+  /** Count users by role */
+  countUsersByRole(role: UserRole): Promise<number>;
 }
 
 /** Auth config */

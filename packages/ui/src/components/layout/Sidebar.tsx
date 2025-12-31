@@ -80,8 +80,8 @@ export function Sidebar({ className }: SidebarProps) {
           ))}
         </div>
 
-        {/* Settings */}
-        {config.auth && (
+        {/* Settings - Only show for admin users */}
+        {config.auth && user?.role === 'admin' && (
           <div className="space-y-1 mt-6">
             <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
               Settings

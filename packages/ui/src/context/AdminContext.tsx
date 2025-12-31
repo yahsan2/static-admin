@@ -1,10 +1,13 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { StaticAdminConfig, Collection, Schema } from '../types';
 
+export type UserRole = 'admin' | 'editor';
+
 export interface User {
   id: number;
   email: string;
   name: string | null;
+  role: UserRole;
   createdAt?: Date | string;
 }
 
@@ -27,16 +30,17 @@ export interface AdminContextValue {
 const AdminContext = createContext<AdminContextValue | null>(null);
 
 export interface AdminProviderProps {
-  config: StaticAdminConfig;
+  config?: StaticAdminConfig;
   apiBasePath?: string;
   children: React.ReactNode;
 }
 
 export function AdminProvider({
-  config,
+  config: initialConfig,
   apiBasePath = '/admin/api',
   children,
 }: AdminProviderProps) {
+  const [config, setConfig] = useState<StaticAdminConfig | null>(initialConfig ?? null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,8 +74,27 @@ export function AdminProvider({
     [apiBasePath]
   );
 
+  // Fetch config from API if not provided
+  useEffect(() => {
+    if (initialConfig) return; // Config was provided as prop
+
+    const fetchConfig = async () => {
+      const result = await fetchApi<StaticAdminConfig>('/schema');
+      if (result.success && result.data) {
+        setConfig(result.data);
+      } else {
+        setError(result.error || 'Failed to load config');
+        setIsLoading(false);
+      }
+    };
+
+    fetchConfig();
+  }, [initialConfig, fetchApi]);
+
   // Check current session and install status on mount
   useEffect(() => {
+    if (!config) return; // Wait for config to be loaded
+
     const checkSession = async () => {
       if (!config.auth) {
         setIsLoading(false);
@@ -100,7 +123,7 @@ export function AdminProvider({
     };
 
     checkSession();
-  }, [config.auth, fetchApi]);
+  }, [config, fetchApi]);
 
   // Login
   const login = useCallback(
@@ -164,6 +187,15 @@ export function AdminProvider({
     },
     [fetchApi]
   );
+
+  // Show loading state while config is being fetched
+  if (!config) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        {error ? <p style={{ color: 'red' }}>{error}</p> : <p>Loading...</p>}
+      </div>
+    );
+  }
 
   const value: AdminContextValue = {
     config,

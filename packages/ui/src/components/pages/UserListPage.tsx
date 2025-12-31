@@ -84,6 +84,9 @@ export function UserListPage() {
                     Name
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                    Role
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
                     Created
                   </th>
                   <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">
@@ -106,6 +109,17 @@ export function UserListPage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">
                       {user.name || '-'}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                          user.role === 'admin'
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {user.role === 'admin' ? 'Admin' : 'Editor'}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">
                       {formatDate(user.createdAt)}

@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAdmin, type User } from '../context/AdminContext';
+import { useAdmin, type User, type UserRole } from '../context/AdminContext';
 
 export interface UserFormData {
   email: string;
   name?: string;
   password?: string;
+  role?: UserRole;
 }
 
 export interface UseUserResult {
