@@ -1,17 +1,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
       '@static-admin/ui': path.resolve(__dirname, '../packages/ui/src'),
       '@static-admin/ui/styles.css': path.resolve(__dirname, '../packages/ui/src/styles.css'),
     },
-  },
-  css: {
-    postcss: path.resolve(__dirname, '../packages/ui'),
   },
   server: {
     port: 5173,
