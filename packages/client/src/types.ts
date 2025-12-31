@@ -6,6 +6,26 @@ import type {
 } from '@static-admin/core';
 
 /**
+ * Registry interface for module augmentation
+ * Users can augment this to provide their config type globally
+ *
+ * @example
+ * ```ts
+ * // static-admin.d.ts
+ * import type { config } from './static-admin.config';
+ *
+ * declare module '@static-admin/client' {
+ *   interface StaticAdminRegistry {
+ *     config: typeof config;
+ *   }
+ * }
+ * ```
+ */
+export interface StaticAdminRegistry {
+  // Will be augmented by user
+}
+
+/**
  * Extract collection names from config
  */
 export type CollectionNames<T> = T extends { collections: infer C }
@@ -125,3 +145,45 @@ export interface ClientQueryBuilder<S extends Schema = Schema> {
 export type Client<T extends StaticAdminConfig<any, any>> = {
   [K in CollectionNames<T>]: ClientQueryBuilder<CollectionSchema<T, K>>;
 };
+
+/**
+ * Get the registered config type (from module augmentation)
+ */
+export type RegisteredConfig = StaticAdminRegistry extends { config: infer C }
+  ? C extends StaticAdminConfig<any, any>
+    ? C
+    : never
+  : never;
+
+/**
+ * Check if a config has been registered
+ */
+export type HasRegisteredConfig = RegisteredConfig extends never ? false : true;
+
+/**
+ * Helper type to get Entry type for a collection
+ *
+ * If config is registered via module augmentation, just use collection name:
+ * @example
+ * ```ts
+ * type PostEntry = CollectionEntry<'posts'>;
+ * ```
+ *
+ * Otherwise, pass config type explicitly:
+ * @example
+ * ```ts
+ * type PostEntry = CollectionEntry<typeof config, 'posts'>;
+ * ```
+ */
+export type CollectionEntry<
+  TConfigOrName extends StaticAdminConfig<any, any> | string,
+  TName extends string = never
+> = TConfigOrName extends string
+  ? // Single argument: use registered config
+    HasRegisteredConfig extends true
+    ? Entry<CollectionSchema<RegisteredConfig, TConfigOrName>>
+    : never
+  : // Two arguments: use provided config
+    TConfigOrName extends StaticAdminConfig<any, any>
+    ? Entry<CollectionSchema<TConfigOrName, TName>>
+    : never;

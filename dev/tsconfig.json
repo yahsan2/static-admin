@@ -4,7 +4,8 @@
     "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "noEmit": true
+    "noEmit": true,
+    "lib": ["DOM", "DOM.Iterable", "ESNext"]
   },
-  "include": ["src", "server"]
+  "include": ["src", "server", "static-admin.d.ts"]
 }

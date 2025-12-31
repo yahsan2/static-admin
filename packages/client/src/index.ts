@@ -4,6 +4,7 @@
 export { createClient } from './client';
 export { ClientQueryBuilder } from './query-builder';
 export type {
+  // Core types
   Client,
   ClientOptions,
   ClientQueryBuilder as IClientQueryBuilder,
@@ -16,4 +17,9 @@ export type {
   PaginationInfo,
   Filters,
   SortOrder,
+  // Module augmentation support
+  StaticAdminRegistry,
+  RegisteredConfig,
+  HasRegisteredConfig,
+  CollectionEntry,
 } from './types';

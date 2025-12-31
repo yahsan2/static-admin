@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { createClient, type Entry } from '@static-admin/client';
-import type { config } from '../../server/api';
+import { createClient, type CollectionEntry } from '@static-admin/client';
 
-type PostEntry = Entry<(typeof config)['collections']['posts']['schema']>;
+// Thanks to static-admin.d.ts, types are automatically inferred!
+type PostEntry = CollectionEntry<'posts'>;
 
-const client = createClient<typeof config>({
+const client = createClient({
   baseUrl: '/public',
 });
 
@@ -70,8 +70,8 @@ export function Home() {
             <p>{post.data.fields.excerpt}</p>
             {post.data.fields.tags && post.data.fields.tags.length > 0 && (
               <div className="tags">
-                {post.data.fields.tags.map((tag) => (
-                  <span key={tag} className="tag">{tag}</span>
+                {post.data.fields.tags.map((tag, i) => (
+                  <span key={i} className="tag">{tag}</span>
                 ))}
               </div>
             )}
