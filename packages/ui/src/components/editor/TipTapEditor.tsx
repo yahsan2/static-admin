@@ -9,17 +9,14 @@ import {
   Italic,
   Strikethrough,
   Code,
-  Heading1,
-  Heading2,
-  Heading3,
   List,
   ListOrdered,
   Quote,
   Minus,
   Link as LinkIcon,
   Image as ImageIcon,
-  Undo,
-  Redo,
+  ChevronDown,
+  Code2,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -72,10 +69,45 @@ export function TipTapEditor({
     }
   };
 
+  const getCurrentBlockType = () => {
+    if (editor.isActive('heading', { level: 1 })) return 'Heading 1';
+    if (editor.isActive('heading', { level: 2 })) return 'Heading 2';
+    if (editor.isActive('heading', { level: 3 })) return 'Heading 3';
+    return 'Paragraph';
+  };
+
   return (
-    <div className={cn('border border-gray-300 rounded-md overflow-hidden', className)}>
+    <div className={cn('min-h-screen overflow-hidden bg-white', className)}>
       {/* Toolbar */}
-      <div className="flex flex-wrap gap-1 p-2 bg-gray-50 border-b border-gray-300">
+      <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-gray-200">
+        {/* Block type dropdown */}
+        <div className="relative">
+          <select
+            value={getCurrentBlockType()}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === 'Paragraph') {
+                editor.chain().focus().setParagraph().run();
+              } else if (value === 'Heading 1') {
+                editor.chain().focus().toggleHeading({ level: 1 }).run();
+              } else if (value === 'Heading 2') {
+                editor.chain().focus().toggleHeading({ level: 2 }).run();
+              } else if (value === 'Heading 3') {
+                editor.chain().focus().toggleHeading({ level: 3 }).run();
+              }
+            }}
+            className="appearance-none bg-transparent text-sm text-gray-700 pl-2 pr-6 py-1 rounded hover:bg-gray-100 cursor-pointer focus:outline-none"
+          >
+            <option>Paragraph</option>
+            <option>Heading 1</option>
+            <option>Heading 2</option>
+            <option>Heading 3</option>
+          </select>
+          <ChevronDown className="absolute right-1 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+        </div>
+
+        <div className="w-px h-5 bg-gray-200 mx-1" />
+
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
           active={editor.isActive('bold')}
@@ -105,31 +137,7 @@ export function TipTapEditor({
           <Code className="w-4 h-4" />
         </ToolbarButton>
 
-        <div className="w-px bg-gray-300 mx-1" />
-
-        <ToolbarButton
-          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          active={editor.isActive('heading', { level: 1 })}
-          title="Heading 1"
-        >
-          <Heading1 className="w-4 h-4" />
-        </ToolbarButton>
-        <ToolbarButton
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          active={editor.isActive('heading', { level: 2 })}
-          title="Heading 2"
-        >
-          <Heading2 className="w-4 h-4" />
-        </ToolbarButton>
-        <ToolbarButton
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          active={editor.isActive('heading', { level: 3 })}
-          title="Heading 3"
-        >
-          <Heading3 className="w-4 h-4" />
-        </ToolbarButton>
-
-        <div className="w-px bg-gray-300 mx-1" />
+        <div className="w-px h-5 bg-gray-200 mx-1" />
 
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -145,6 +153,22 @@ export function TipTapEditor({
         >
           <ListOrdered className="w-4 h-4" />
         </ToolbarButton>
+
+        <div className="w-px h-5 bg-gray-200 mx-1" />
+
+        <ToolbarButton
+          onClick={() => editor.chain().focus().setHorizontalRule().run()}
+          title="Horizontal Rule"
+        >
+          <Minus className="w-4 h-4" />
+        </ToolbarButton>
+
+        <ToolbarButton onClick={addLink} active={editor.isActive('link')} title="Link">
+          <LinkIcon className="w-4 h-4" />
+        </ToolbarButton>
+        <ToolbarButton onClick={addImage} title="Image">
+          <ImageIcon className="w-4 h-4" />
+        </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
           active={editor.isActive('blockquote')}
@@ -153,43 +177,18 @@ export function TipTapEditor({
           <Quote className="w-4 h-4" />
         </ToolbarButton>
         <ToolbarButton
-          onClick={() => editor.chain().focus().setHorizontalRule().run()}
-          title="Horizontal Rule"
+          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+          active={editor.isActive('codeBlock')}
+          title="Code Block"
         >
-          <Minus className="w-4 h-4" />
-        </ToolbarButton>
-
-        <div className="w-px bg-gray-300 mx-1" />
-
-        <ToolbarButton onClick={addLink} active={editor.isActive('link')} title="Link">
-          <LinkIcon className="w-4 h-4" />
-        </ToolbarButton>
-        <ToolbarButton onClick={addImage} title="Image">
-          <ImageIcon className="w-4 h-4" />
-        </ToolbarButton>
-
-        <div className="w-px bg-gray-300 mx-1" />
-
-        <ToolbarButton
-          onClick={() => editor.chain().focus().undo().run()}
-          disabled={!editor.can().undo()}
-          title="Undo"
-        >
-          <Undo className="w-4 h-4" />
-        </ToolbarButton>
-        <ToolbarButton
-          onClick={() => editor.chain().focus().redo().run()}
-          disabled={!editor.can().redo()}
-          title="Redo"
-        >
-          <Redo className="w-4 h-4" />
+          <Code2 className="w-4 h-4" />
         </ToolbarButton>
       </div>
 
       {/* Editor content */}
       <EditorContent
         editor={editor}
-        className="prose prose-sm max-w-none p-4 min-h-[200px] focus:outline-none"
+        className="prose prose-sm max-w-none p-6 min-h-[400px] focus:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[400px]"
       />
     </div>
   );
@@ -217,9 +216,9 @@ function ToolbarButton({
       disabled={disabled}
       title={title}
       className={cn(
-        'p-1.5 rounded hover:bg-gray-200 transition-colors',
-        active && 'bg-gray-200 text-blue-600',
-        disabled && 'opacity-50 cursor-not-allowed'
+        'p-1.5 rounded text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors',
+        active && 'bg-gray-100 text-gray-900',
+        disabled && 'opacity-40 cursor-not-allowed'
       )}
     >
       {children}

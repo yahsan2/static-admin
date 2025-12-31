@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Save, Trash2, ArrowLeft } from 'lucide-react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Save, Trash2, Copy, Eye, ChevronRight } from 'lucide-react';
 import { useEntry } from '../../hooks/useEntry';
 import { useConfig } from '../../hooks/useConfig';
 import { getDefaultValues } from '../../lib/schema';
-import { Header } from '../layout/Header';
 import { FieldRenderer } from '../fields/FieldRenderer';
 import { TipTapEditor } from '../editor/TipTapEditor';
 import { cn } from '../../lib/utils';
@@ -111,92 +110,104 @@ export function EntryEditPage() {
     }
   };
 
-  const title = isNew ? `New ${collection.config.label}` : `Edit ${entry?.slug || ''}`;
-
   // Separate fields into regular and markdoc
-  const regularFields = Object.entries(collection.config.schema).filter(
-    ([_, f]) => f.type !== 'markdoc'
-  );
-  const markdocField = Object.entries(collection.config.schema).find(
-    ([_, f]) => f.type === 'markdoc'
-  );
+  const allFields = Object.entries(collection.config.schema);
+  const markdocField = allFields.find(([_, f]) => f.type === 'markdoc');
+  const regularFields = allFields.filter(([_, f]) => f.type !== 'markdoc');
 
   return (
-    <div>
-      <Header
-        title={title}
-        breadcrumbs={[
-          { label: 'Dashboard', href: '/' },
-          { label: collection.config.label, href: `/collections/${collectionName}` },
-          { label: isNew ? 'New' : entry?.slug || '' },
-        ]}
-        actions={
-          <div className="flex items-center gap-2">
-            {!isNew && (
-              <button
-                onClick={handleDelete}
-                className="flex items-center gap-2 px-4 py-2 border border-red-300 text-red-600 rounded-md hover:bg-red-50 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete
-              </button>
-            )}
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
-            >
-              <Save className="w-4 h-4" />
-              {isSaving ? 'Saving...' : 'Save'}
-            </button>
-          </div>
-        }
-      />
+    <div className="flex flex-col h-full">
+      {/* Header with breadcrumbs */}
+      <header className="flex items-center justify-between px-6 py-3 border-b border-gray-200 bg-white">
+        <nav className="flex items-center gap-2 text-sm">
+          <Link
+            to={`/collections/${collectionName}`}
+            className="text-gray-600 hover:text-gray-900 font-medium"
+          >
+            {collection.config.label}
+          </Link>
+          <ChevronRight className="w-4 h-4 text-gray-400" />
+          <span className="text-gray-900 font-medium">
+            {isNew ? 'New' : entry?.slug || ''}
+          </span>
+        </nav>
 
-      <div className="p-6">
+        <div className="flex items-center gap-2">
+          <button
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+            title="Preview"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
+          {!isNew && (
+            <button
+              onClick={handleDelete}
+              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+              title="Delete"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+          <button
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+            title="Copy"
+          >
+            <Copy className="w-4 h-4" />
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+          >
+            {isSaving ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+      </header>
+
+      {/* Main content area */}
+      <div className="flex flex-1 overflow-hidden">
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900" />
+          <div className="flex-1 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
           </div>
         ) : error ? (
-          <div className="text-red-500">{error}</div>
+          <div className="flex-1 p-6 text-red-500">{error}</div>
         ) : (
-          <div className="max-w-4xl">
-            {saveError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600">
-                {saveError}
-              </div>
-            )}
+          <>
+            {/* Center: Editor */}
+            <div className="flex-1 overflow-y-auto">
+              {saveError && (
+                <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+                  {saveError}
+                </div>
+              )}
 
-            <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
-              {/* Regular fields */}
-              {regularFields.map(([name, field]) => (
-                <FieldRenderer
-                  key={name}
-                  field={field}
-                  value={formData[name]}
-                  onChange={(value) => handleFieldChange(name, value)}
-                  collectionName={collectionName || ''}
-                  slug={slug || formData['slug'] as string || 'new'}
-                />
-              ))}
-
-              {/* Markdoc/Content field */}
-              {markdocField && (
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-700">
-                    {markdocField[1].label}
-                  </label>
-                  {markdocField[1].description && (
-                    <p className="text-sm text-gray-500">
-                      {markdocField[1].description}
-                    </p>
-                  )}
-                  <TipTapEditor value={content} onChange={setContent} />
+              {/* Content editor */}
+              {markdocField ? (
+                <TipTapEditor value={content} onChange={setContent} />
+              ) : (
+                <div className="p-6 text-gray-500 text-center">
+                  <p>No content editor configured for this collection.</p>
                 </div>
               )}
             </div>
-          </div>
+
+            {/* Right sidebar: Metadata fields */}
+            <aside className="w-72 border-l border-gray-200 bg-gray-50/50 overflow-y-auto">
+              <div className="p-4 space-y-5">
+                {regularFields.map(([name, field]) => (
+                  <FieldRenderer
+                    key={name}
+                    field={field}
+                    value={formData[name]}
+                    onChange={(value) => handleFieldChange(name, value)}
+                    collectionName={collectionName || ''}
+                    slug={slug || formData['slug'] as string || 'new'}
+                  />
+                ))}
+              </div>
+            </aside>
+          </>
         )}
       </div>
     </div>
