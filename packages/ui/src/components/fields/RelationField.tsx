@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { RelationField as RelationFieldType } from '@static-admin/core';
+import type { RelationField as RelationFieldType } from '../../types';
 import { useAdmin } from '../../context/AdminContext';
 import { cn } from '../../lib/utils';
 

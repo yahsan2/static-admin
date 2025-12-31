@@ -1,6 +1,6 @@
 import React from 'react';
 import { Plus, Trash2, GripVertical } from 'lucide-react';
-import type { ArrayField as ArrayFieldType, Field } from '@static-admin/core';
+import type { ArrayField as ArrayFieldType, Field } from '../../types';
 import { FieldRenderer } from './FieldRenderer';
 import { cn } from '../../lib/utils';
 

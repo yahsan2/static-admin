@@ -66,4 +66,8 @@ export interface ApiHandlers {
   login: ApiHandler;
   logout: ApiHandler;
   getMe: ApiHandler;
+
+  // Install
+  checkInstall: ApiHandler;
+  setupAdmin: ApiHandler;
 }

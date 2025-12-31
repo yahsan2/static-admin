@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "turbo build",
-    "dev": "turbo dev",
+    "dev": "pnpm --filter static-admin-dev dev",
     "lint": "turbo lint",
     "format": "oxlint --fix .",
     "clean": "turbo clean && rm -rf node_modules"

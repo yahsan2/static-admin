@@ -1,6 +1,16 @@
 // @static-admin/ui
 // React admin UI components
 
+// Types (re-exported for client-side use)
+export type {
+  StaticAdminConfig,
+  Collection,
+  Schema,
+  Field,
+  Entry,
+  EntryData,
+} from './types';
+
 // Main App
 export { StaticAdminApp } from './components/App';
 export { AdminProvider, useAdmin } from './context/AdminContext';

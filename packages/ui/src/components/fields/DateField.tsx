@@ -1,5 +1,5 @@
 import React from 'react';
-import type { DateField as DateFieldType } from '@static-admin/core';
+import type { DateField as DateFieldType } from '../../types';
 import { cn } from '../../lib/utils';
 
 export interface DateFieldProps {

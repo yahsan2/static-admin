@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAdmin } from '../context/AdminContext';
-import type { Entry, EntryData, Schema } from '@static-admin/core';
+import type { Entry, EntryData, Schema } from '../types';
 
 export interface UseEntryResult<S extends Schema = Schema> {
   entry: Entry<S> | null;

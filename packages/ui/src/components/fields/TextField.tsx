@@ -1,5 +1,5 @@
 import React from 'react';
-import type { TextField as TextFieldType } from '@static-admin/core';
+import type { TextField as TextFieldType } from '../../types';
 import { cn } from '../../lib/utils';
 
 export interface TextFieldProps {

@@ -1,5 +1,5 @@
 import React from 'react';
-import type { SlugField as SlugFieldType } from '@static-admin/core';
+import type { SlugField as SlugFieldType } from '../../types';
 import { cn } from '../../lib/utils';
 
 export interface SlugFieldProps {

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import type { StaticAdminConfig, Collection, Schema } from '@static-admin/core';
+import type { StaticAdminConfig, Collection, Schema } from '../types';
 
 export interface User {
   id: number;
@@ -13,8 +13,10 @@ export interface AdminContextValue {
   user: User | null;
   isLoading: boolean;
   error: string | null;
+  needsSetup: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  setupAdmin: (email: string, password: string, name?: string) => Promise<void>;
   fetchApi: <T = unknown>(
     endpoint: string,
     options?: RequestInit
@@ -37,6 +39,7 @@ export function AdminProvider({
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [needsSetup, setNeedsSetup] = useState(false);
 
   // Fetch wrapper with base path
   const fetchApi = useCallback(
@@ -66,7 +69,7 @@ export function AdminProvider({
     [apiBasePath]
   );
 
-  // Check current session on mount
+  // Check current session and install status on mount
   useEffect(() => {
     const checkSession = async () => {
       if (!config.auth) {
@@ -75,6 +78,15 @@ export function AdminProvider({
       }
 
       try {
+        // First check if installation is needed
+        const installResult = await fetchApi<{ installed: boolean; needsSetup: boolean }>('/install/check');
+        if (installResult.success && installResult.data?.needsSetup) {
+          setNeedsSetup(true);
+          setIsLoading(false);
+          return;
+        }
+
+        // Then check current session
         const result = await fetchApi<User>('/auth/me');
         if (result.success && result.data) {
           setUser(result.data);
@@ -126,14 +138,42 @@ export function AdminProvider({
     }
   }, [fetchApi]);
 
+  // Setup admin (initial installation)
+  const setupAdmin = useCallback(
+    async (email: string, password: string, name?: string) => {
+      setError(null);
+      setIsLoading(true);
+
+      try {
+        const result = await fetchApi<{ user: User }>('/install/setup', {
+          method: 'POST',
+          body: JSON.stringify({ email, password, name }),
+        });
+
+        if (result.success && result.data) {
+          setUser(result.data.user);
+          setNeedsSetup(false);
+        } else {
+          setError(result.error || 'Setup failed');
+          throw new Error(result.error || 'Setup failed');
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [fetchApi]
+  );
+
   const value: AdminContextValue = {
     config,
     apiBasePath,
     user,
     isLoading,
     error,
+    needsSetup,
     login,
     logout,
+    setupAdmin,
     fetchApi,
   };
 

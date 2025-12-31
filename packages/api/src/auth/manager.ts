@@ -37,6 +37,12 @@ export function createAuthManager(config: AuthConfig): AuthManager {
       `);
     },
 
+    async hasAnyUsers(): Promise<boolean> {
+      const stmt = db.prepare<[], { count: number }>(`SELECT COUNT(*) as count FROM users`);
+      const row = stmt.get();
+      return (row?.count ?? 0) > 0;
+    },
+
     async createUser(email: string, password: string, name?: string): Promise<User> {
       const passwordHash = hashPassword(password);
 

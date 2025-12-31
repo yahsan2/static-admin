@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
-import type { ImageField as ImageFieldType } from '@static-admin/core';
+import type { ImageField as ImageFieldType } from '../../types';
 import { useAdmin } from '../../context/AdminContext';
 import { cn } from '../../lib/utils';
 

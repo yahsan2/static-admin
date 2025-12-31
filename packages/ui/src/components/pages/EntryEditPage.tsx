@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Save, Trash2, ArrowLeft } from 'lucide-react';
 import { useEntry } from '../../hooks/useEntry';
 import { useConfig } from '../../hooks/useConfig';
-import { getDefaultValues, type Schema } from '@static-admin/core';
+import { getDefaultValues } from '../../lib/schema';
 import { Header } from '../layout/Header';
 import { FieldRenderer } from '../fields/FieldRenderer';
 import { TipTapEditor } from '../editor/TipTapEditor';

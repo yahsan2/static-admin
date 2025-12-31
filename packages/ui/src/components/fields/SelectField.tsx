@@ -1,5 +1,5 @@
 import React from 'react';
-import type { SelectField as SelectFieldType } from '@static-admin/core';
+import type { SelectField as SelectFieldType } from '../../types';
 import { cn } from '../../lib/utils';
 
 export interface SelectFieldProps {

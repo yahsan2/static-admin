@@ -1,5 +1,5 @@
 import { useAdmin } from '../context/AdminContext';
-import type { StaticAdminConfig, Collection, Schema } from '@static-admin/core';
+import type { StaticAdminConfig, Collection, Schema } from '../types';
 
 export interface UseConfigResult {
   config: StaticAdminConfig;

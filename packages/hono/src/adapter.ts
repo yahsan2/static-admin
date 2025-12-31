@@ -22,7 +22,7 @@ const DEFAULT_API_BASE_PATH = '/api/admin';
  * export default app;
  * ```
  */
-export function staticAdmin(options: StaticAdminHonoOptions): Hono {
+export function staticAdmin(options: StaticAdminHonoOptions) {
   const {
     config,
     rootDir = process.cwd(),
@@ -58,7 +58,7 @@ export function staticAdmin(options: StaticAdminHonoOptions): Hono {
   // ===== Auth Routes =====
   if (auth) {
     // Login
-    app.post('/api/auth/login', async (c) => {
+    app.post('/auth/login', async (c) => {
       const body = await c.req.json();
       const ctx: ApiContext = {
         config,
@@ -87,7 +87,7 @@ export function staticAdmin(options: StaticAdminHonoOptions): Hono {
     });
 
     // Logout
-    app.post('/api/auth/logout', async (c) => {
+    app.post('/auth/logout', async (c) => {
       const sessionId = c.get('sessionId');
 
       if (sessionId && auth) {
@@ -100,14 +100,62 @@ export function staticAdmin(options: StaticAdminHonoOptions): Hono {
     });
 
     // Get current user
-    app.get('/api/auth/me', requireAuth(), async (c) => {
+    app.get('/auth/me', requireAuth(), async (c) => {
       const user = c.get('user');
       return c.json({ success: true, data: user });
+    });
+
+    // ===== Install Routes =====
+    // Check install status
+    app.get('/install/check', async (c) => {
+      const ctx: ApiContext = {
+        config,
+        auth: auth!,
+        rootDir,
+      };
+
+      const result = await handlers.checkInstall(ctx, {
+        params: {},
+        query: {},
+        body: null,
+      });
+
+      return c.json(result);
+    });
+
+    // Setup admin user
+    app.post('/install/setup', async (c) => {
+      const ctx: ApiContext = {
+        config,
+        auth: auth!,
+        rootDir,
+      };
+
+      const body = await c.req.json();
+
+      const result = await handlers.setupAdmin(ctx, {
+        params: {},
+        query: {},
+        body,
+      });
+
+      if (result.success && result.data) {
+        const data = result.data as { sessionId: string; expiresAt: string };
+        setCookie(c, sessionCookie, data.sessionId, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'Lax',
+          path: '/',
+          expires: new Date(data.expiresAt),
+        });
+      }
+
+      return c.json(result, result.success ? 201 : 400);
     });
   }
 
   // ===== Schema Routes =====
-  app.get('/api/schema', async (c) => {
+  app.get('/schema', async (c) => {
     const ctx: ApiContext = {
       config,
       auth: auth!,
@@ -125,7 +173,7 @@ export function staticAdmin(options: StaticAdminHonoOptions): Hono {
   });
 
   // ===== Collection Routes =====
-  app.get('/api/collections', async (c) => {
+  app.get('/collections', async (c) => {
     const ctx: ApiContext = {
       config,
       auth: auth!,
@@ -142,7 +190,7 @@ export function staticAdmin(options: StaticAdminHonoOptions): Hono {
     return c.json(result);
   });
 
-  app.get('/api/collections/:collection', async (c) => {
+  app.get('/collections/:collection', async (c) => {
     const ctx: ApiContext = {
       config,
       auth: auth!,
@@ -161,7 +209,7 @@ export function staticAdmin(options: StaticAdminHonoOptions): Hono {
 
   // ===== Entry Routes =====
   // List entries
-  app.get('/api/entries/:collection', async (c) => {
+  app.get('/entries/:collection', async (c) => {
     const ctx: ApiContext = {
       config,
       auth: auth!,
@@ -179,7 +227,7 @@ export function staticAdmin(options: StaticAdminHonoOptions): Hono {
   });
 
   // Get single entry
-  app.get('/api/entries/:collection/:slug', async (c) => {
+  app.get('/entries/:collection/:slug', async (c) => {
     const ctx: ApiContext = {
       config,
       auth: auth!,
@@ -202,7 +250,7 @@ export function staticAdmin(options: StaticAdminHonoOptions): Hono {
   // Create entry (requires auth)
   const protectedRoutes = auth ? requireAuth() : async (_: unknown, next: () => Promise<void>) => next();
 
-  app.post('/api/entries/:collection', protectedRoutes, async (c) => {
+  app.post('/entries/:collection', protectedRoutes, async (c) => {
     const ctx: ApiContext = {
       config,
       auth: auth!,
@@ -222,7 +270,7 @@ export function staticAdmin(options: StaticAdminHonoOptions): Hono {
   });
 
   // Update entry (requires auth)
-  app.put('/api/entries/:collection/:slug', protectedRoutes, async (c) => {
+  app.put('/entries/:collection/:slug', protectedRoutes, async (c) => {
     const ctx: ApiContext = {
       config,
       auth: auth!,
@@ -245,7 +293,7 @@ export function staticAdmin(options: StaticAdminHonoOptions): Hono {
   });
 
   // Delete entry (requires auth)
-  app.delete('/api/entries/:collection/:slug', protectedRoutes, async (c) => {
+  app.delete('/entries/:collection/:slug', protectedRoutes, async (c) => {
     const ctx: ApiContext = {
       config,
       auth: auth!,
@@ -266,7 +314,7 @@ export function staticAdmin(options: StaticAdminHonoOptions): Hono {
   });
 
   // ===== Upload Routes =====
-  app.post('/api/upload/:collection/:slug', protectedRoutes, async (c) => {
+  app.post('/upload/:collection/:slug', protectedRoutes, async (c) => {
     const ctx: ApiContext = {
       config,
       auth: auth!,

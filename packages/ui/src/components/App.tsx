@@ -1,12 +1,13 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import type { StaticAdminConfig } from '@static-admin/core';
+import type { StaticAdminConfig } from '../types';
 import { AdminProvider, useAdmin } from '../context/AdminContext';
 import { AdminLayout } from './layout/AdminLayout';
 import { CollectionListPage } from './pages/CollectionListPage';
 import { EntryListPage } from './pages/EntryListPage';
 import { EntryEditPage } from './pages/EntryEditPage';
 import { LoginPage } from './pages/LoginPage';
+import { InstallPage } from './pages/InstallPage';
 
 export interface StaticAdminAppProps {
   config: StaticAdminConfig;
@@ -29,7 +30,7 @@ export function StaticAdminApp({
 }
 
 function AppRoutes() {
-  const { config, user, isLoading } = useAdmin();
+  const { config, user, isLoading, needsSetup } = useAdmin();
 
   // Show loading state
   if (isLoading) {
@@ -40,14 +41,47 @@ function AppRoutes() {
     );
   }
 
-  // Require login if auth is configured and user is not logged in
-  if (config.auth && !user) {
-    return <LoginPage />;
-  }
-
   return (
     <Routes>
-      <Route path="/" element={<AdminLayout />}>
+      {/* Install page */}
+      <Route
+        path="/install"
+        element={
+          config.auth && needsSetup ? (
+            <InstallPage />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+
+      {/* Login page */}
+      <Route
+        path="/login"
+        element={
+          config.auth && !user && !needsSetup ? (
+            <LoginPage />
+          ) : needsSetup ? (
+            <Navigate to="/install" replace />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+
+      {/* Protected routes */}
+      <Route
+        path="/"
+        element={
+          config.auth && needsSetup ? (
+            <Navigate to="/install" replace />
+          ) : config.auth && !user ? (
+            <Navigate to="/login" replace />
+          ) : (
+            <AdminLayout />
+          )
+        }
+      >
         {/* Dashboard / Collection list */}
         <Route index element={<CollectionListPage />} />
 
@@ -62,7 +96,18 @@ function AppRoutes() {
       </Route>
 
       {/* Catch-all redirect */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route
+        path="*"
+        element={
+          config.auth && needsSetup ? (
+            <Navigate to="/install" replace />
+          ) : config.auth && !user ? (
+            <Navigate to="/login" replace />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
     </Routes>
   );
 }

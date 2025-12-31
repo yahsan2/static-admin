@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAdmin } from '../context/AdminContext';
-import type { Entry, Schema } from '@static-admin/core';
+import type { Entry, Schema } from '../types';
 
 export interface UseCollectionOptions {
   page?: number;

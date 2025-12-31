@@ -1,5 +1,5 @@
 import React from 'react';
-import type { CheckboxField as CheckboxFieldType } from '@static-admin/core';
+import type { CheckboxField as CheckboxFieldType } from '../../types';
 import { cn } from '../../lib/utils';
 
 export interface CheckboxFieldProps {

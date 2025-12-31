@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Field } from '@static-admin/core';
+import type { Field } from '../../types';
 import { TextField } from './TextField';
 import { SlugField } from './SlugField';
 import { TextareaField } from './TextareaField';

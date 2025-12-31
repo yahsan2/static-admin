@@ -1,5 +1,5 @@
 import React from 'react';
-import type { TextareaField as TextareaFieldType } from '@static-admin/core';
+import type { TextareaField as TextareaFieldType } from '../../types';
 import { cn } from '../../lib/utils';
 
 export interface TextareaFieldProps {

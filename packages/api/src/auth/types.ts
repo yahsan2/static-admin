@@ -23,6 +23,9 @@ export interface AuthManager {
   /** Initialize database tables */
   initialize(): Promise<void>;
 
+  /** Check if any users exist */
+  hasAnyUsers(): Promise<boolean>;
+
   /** Create a new user */
   createUser(email: string, password: string, name?: string): Promise<User>;
 

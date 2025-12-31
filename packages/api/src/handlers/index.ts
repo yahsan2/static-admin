@@ -31,5 +31,9 @@ export function createApiHandlers(): ApiHandlers {
     login: auth.login,
     logout: auth.logout,
     getMe: auth.getMe,
+
+    // Install
+    checkInstall: auth.checkInstall,
+    setupAdmin: auth.setupAdmin,
   };
 }
