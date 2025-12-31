@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { StaticAdminApp } from '@static-admin/ui';
+import '@static-admin/ui/styles.css';
 import config from './config';
 
 const root = document.getElementById('root');

@@ -7,7 +7,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@static-admin/ui': path.resolve(__dirname, '../packages/ui/src'),
+      '@static-admin/ui/styles.css': path.resolve(__dirname, '../packages/ui/src/styles.css'),
     },
+  },
+  css: {
+    postcss: path.resolve(__dirname, '../packages/ui'),
   },
   server: {
     port: 5173,
