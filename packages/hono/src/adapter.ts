@@ -152,6 +152,101 @@ export function staticAdmin(options: StaticAdminHonoOptions) {
 
       return c.json(result, result.success ? 201 : 400);
     });
+
+    // ===== User Management Routes =====
+    // List users
+    app.get('/users', requireAuth(), async (c) => {
+      const ctx: ApiContext = {
+        config,
+        auth: auth!,
+        rootDir,
+        user: c.get('user'),
+      };
+
+      const result = await handlers.listUsers(ctx, {
+        params: {},
+        query: c.req.query() as Record<string, string>,
+        body: null,
+      });
+
+      return c.json(result);
+    });
+
+    // Get single user
+    app.get('/users/:id', requireAuth(), async (c) => {
+      const ctx: ApiContext = {
+        config,
+        auth: auth!,
+        rootDir,
+        user: c.get('user'),
+      };
+
+      const result = await handlers.getUser(ctx, {
+        params: { id: c.req.param('id') },
+        query: {},
+        body: null,
+      });
+
+      return c.json(result);
+    });
+
+    // Create user
+    app.post('/users', requireAuth(), async (c) => {
+      const ctx: ApiContext = {
+        config,
+        auth: auth!,
+        rootDir,
+        user: c.get('user'),
+      };
+
+      const body = await c.req.json();
+
+      const result = await handlers.createUser(ctx, {
+        params: {},
+        query: {},
+        body,
+      });
+
+      return c.json(result, result.success ? 201 : 400);
+    });
+
+    // Update user
+    app.put('/users/:id', requireAuth(), async (c) => {
+      const ctx: ApiContext = {
+        config,
+        auth: auth!,
+        rootDir,
+        user: c.get('user'),
+      };
+
+      const body = await c.req.json();
+
+      const result = await handlers.updateUser(ctx, {
+        params: { id: c.req.param('id') },
+        query: {},
+        body,
+      });
+
+      return c.json(result);
+    });
+
+    // Delete user
+    app.delete('/users/:id', requireAuth(), async (c) => {
+      const ctx: ApiContext = {
+        config,
+        auth: auth!,
+        rootDir,
+        user: c.get('user'),
+      };
+
+      const result = await handlers.deleteUser(ctx, {
+        params: { id: c.req.param('id') },
+        query: {},
+        body: null,
+      });
+
+      return c.json(result);
+    });
   }
 
   // ===== Schema Routes =====

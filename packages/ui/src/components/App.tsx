@@ -6,6 +6,8 @@ import { AdminLayout } from './layout/AdminLayout';
 import { CollectionListPage } from './pages/CollectionListPage';
 import { EntryListPage } from './pages/EntryListPage';
 import { EntryEditPage } from './pages/EntryEditPage';
+import { UserListPage } from './pages/UserListPage';
+import { UserEditPage } from './pages/UserEditPage';
 import { LoginPage } from './pages/LoginPage';
 import { InstallPage } from './pages/InstallPage';
 
@@ -93,6 +95,11 @@ function AppRoutes() {
 
         {/* Edit existing entry */}
         <Route path="collections/:collection/:slug" element={<EntryEditPage />} />
+
+        {/* User management */}
+        <Route path="users" element={<UserListPage />} />
+        <Route path="users/new" element={<UserEditPage />} />
+        <Route path="users/:id" element={<UserEditPage />} />
       </Route>
 
       {/* Catch-all redirect */}

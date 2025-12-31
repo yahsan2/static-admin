@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FileText, LogOut, ExternalLink } from 'lucide-react';
+import { FileText, LogOut, ExternalLink, Users } from 'lucide-react';
 import { useConfig } from '../../hooks/useConfig';
 import { useAdmin } from '../../context/AdminContext';
 import { cn } from '../../lib/utils';
@@ -79,6 +79,27 @@ export function Sidebar({ className }: SidebarProps) {
             </Link>
           ))}
         </div>
+
+        {/* Settings */}
+        {config.auth && (
+          <div className="space-y-1 mt-6">
+            <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+              Settings
+            </p>
+            <Link
+              to="/users"
+              className={cn(
+                'flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors',
+                isActive('/users')
+                  ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-600 -ml-0.5 pl-[calc(0.75rem+2px)]'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              )}
+            >
+              <Users className="w-4 h-4" />
+              Users
+            </Link>
+          </div>
+        )}
       </nav>
 
       {/* User section */}
