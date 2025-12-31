@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAdmin } from '../../context/AdminContext';
 
 export function LoginPage() {
@@ -55,6 +56,12 @@ export function LoginPage() {
             {isLoading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+
+        <div className="mt-4 text-center">
+          <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
+            パスワードをお忘れですか?
+          </Link>
+        </div>
       </div>
     </div>
   );

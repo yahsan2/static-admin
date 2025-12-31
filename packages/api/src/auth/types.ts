@@ -17,6 +17,14 @@ export interface Session {
   expiresAt: Date;
 }
 
+/** Password reset token record */
+export interface PasswordResetToken {
+  token: string;
+  userId: number;
+  email: string;
+  expiresAt: Date;
+}
+
 /** User with password (internal) */
 export interface UserWithPassword extends User {
   passwordHash: string;
@@ -68,6 +76,15 @@ export interface AuthManager {
 
   /** Count users by role */
   countUsersByRole(role: UserRole): Promise<number>;
+
+  /** Create password reset token for email */
+  createPasswordResetToken(email: string): Promise<PasswordResetToken | null>;
+
+  /** Validate password reset token */
+  validatePasswordResetToken(token: string): Promise<PasswordResetToken | null>;
+
+  /** Reset password using token */
+  resetPasswordWithToken(token: string, newPassword: string): Promise<boolean>;
 }
 
 /** Auth config */

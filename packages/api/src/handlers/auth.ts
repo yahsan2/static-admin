@@ -127,3 +127,86 @@ export const setupAdmin: ApiHandler = async (ctx, req) => {
     };
   }
 };
+
+/**
+ * Request password reset
+ */
+export const requestPasswordReset: ApiHandler = async (ctx, req) => {
+  const { auth, mail, baseUrl } = ctx;
+  const body = req.body as { email?: string };
+
+  if (!body.email) {
+    return { success: false, error: 'Email is required' };
+  }
+
+  try {
+    // Create reset token (returns null if user not found)
+    const resetToken = await auth.createPasswordResetToken(body.email);
+
+    // Always return success to prevent email enumeration
+    if (!resetToken) {
+      return { success: true, data: { message: 'If the email exists, a reset link has been sent' } };
+    }
+
+    // Send email if mail service is available
+    if (mail) {
+      const resetUrl = `${baseUrl || ''}/reset-password?token=${resetToken.token}`;
+      const result = await mail.sendPasswordResetEmail(body.email, resetUrl);
+
+      return {
+        success: true,
+        data: {
+          message: 'If the email exists, a reset link has been sent',
+          // Include preview URL in development (Ethereal)
+          ...(result.previewUrl && { previewUrl: result.previewUrl }),
+        },
+      };
+    }
+
+    // If no mail service, return token directly (development only)
+    return {
+      success: true,
+      data: {
+        message: 'Password reset token created',
+        token: resetToken.token,
+        expiresAt: resetToken.expiresAt.toISOString(),
+      },
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to request password reset',
+    };
+  }
+};
+
+/**
+ * Reset password with token
+ */
+export const resetPassword: ApiHandler = async (ctx, req) => {
+  const { auth } = ctx;
+  const body = req.body as { token?: string; password?: string };
+
+  if (!body.token || !body.password) {
+    return { success: false, error: 'Token and password are required' };
+  }
+
+  if (body.password.length < 8) {
+    return { success: false, error: 'Password must be at least 8 characters' };
+  }
+
+  try {
+    const success = await auth.resetPasswordWithToken(body.token, body.password);
+
+    if (!success) {
+      return { success: false, error: 'Invalid or expired reset token' };
+    }
+
+    return { success: true, data: { message: 'Password has been reset successfully' } };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to reset password',
+    };
+  }
+};

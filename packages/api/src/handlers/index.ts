@@ -43,5 +43,9 @@ export function createApiHandlers(): ApiHandlers {
     createUser: users.createUser,
     updateUser: users.updateUser,
     deleteUser: users.deleteUser,
+
+    // Password Reset
+    requestPasswordReset: auth.requestPasswordReset,
+    resetPassword: auth.resetPassword,
   };
 }

@@ -10,6 +10,8 @@ import { UserListPage } from './pages/UserListPage';
 import { UserEditPage } from './pages/UserEditPage';
 import { LoginPage } from './pages/LoginPage';
 import { InstallPage } from './pages/InstallPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 
 export interface StaticAdminAppProps {
   config?: StaticAdminConfig;
@@ -65,6 +67,30 @@ function AppRoutes() {
             <LoginPage />
           ) : needsSetup ? (
             <Navigate to="/install" replace />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+
+      {/* Forgot password page */}
+      <Route
+        path="/forgot-password"
+        element={
+          config.auth && !user ? (
+            <ForgotPasswordPage />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+
+      {/* Reset password page */}
+      <Route
+        path="/reset-password"
+        element={
+          config.auth && !user ? (
+            <ResetPasswordPage />
           ) : (
             <Navigate to="/" replace />
           )

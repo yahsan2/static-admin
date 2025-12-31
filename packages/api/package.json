@@ -17,7 +17,9 @@
       }
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -25,10 +27,12 @@
   },
   "dependencies": {
     "@static-admin/core": "workspace:*",
-    "better-sqlite3": "^11.7.0"
+    "better-sqlite3": "^11.7.0",
+    "nodemailer": "^7.0.12"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
+    "@types/nodemailer": "^7.0.4",
     "tsup": "^8.3.0",
     "typescript": "^5.7.0"
   },

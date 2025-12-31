@@ -1,5 +1,6 @@
 import type { StaticAdminConfig } from '@static-admin/core';
 import type { AuthManager, User } from '../auth/types';
+import type { MailService } from '../mail';
 
 /** API request context */
 export interface ApiContext {
@@ -7,6 +8,8 @@ export interface ApiContext {
   auth: AuthManager;
   rootDir: string;
   user?: User;
+  mail?: MailService;
+  baseUrl?: string;
 }
 
 /** Standard API response */
@@ -77,4 +80,8 @@ export interface ApiHandlers {
   createUser: ApiHandler;
   updateUser: ApiHandler;
   deleteUser: ApiHandler;
+
+  // Password Reset
+  requestPasswordReset: ApiHandler;
+  resetPassword: ApiHandler;
 }

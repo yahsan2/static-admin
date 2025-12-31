@@ -109,7 +109,7 @@ export const updateUser: ApiHandler = async (ctx, req) => {
   }
 
   const id = parseInt(req.params.id);
-  const body = req.body as { email?: string; name?: string; password?: string; role?: UserRole };
+  const body = req.body as { email?: string; name?: string; role?: UserRole };
 
   if (isNaN(id)) {
     return { success: false, error: 'Invalid user ID' };
@@ -122,16 +122,12 @@ export const updateUser: ApiHandler = async (ctx, req) => {
 
   try {
     // Update user details (name, email, role)
+    // Note: Password changes are handled via forgot-password flow
     const user = await auth.updateUser(id, {
       email: body.email,
       name: body.name,
       role: body.role,
     });
-
-    // Update password if provided
-    if (body.password) {
-      await auth.updatePassword(id, body.password);
-    }
 
     return { success: true, data: user };
   } catch (error) {

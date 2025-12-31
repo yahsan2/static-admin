@@ -7,4 +7,8 @@ export type { ApiHandlers, ApiRequest, ApiResponse, ApiContext } from './handler
 
 // Auth
 export { createAuthManager } from './auth/manager';
-export type { AuthManager, User, Session } from './auth/types';
+export type { AuthManager, User, Session, PasswordResetToken } from './auth/types';
+
+// Mail
+export { createMailService } from './mail';
+export type { MailService, MailConfig } from './mail';

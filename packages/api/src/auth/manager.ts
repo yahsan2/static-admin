@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
-import type { AuthManager, User, Session, UserWithPassword, AuthConfig, UserRole } from './types';
+import type { AuthManager, User, Session, UserWithPassword, AuthConfig, UserRole, PasswordResetToken } from './types';
 
 const DEFAULT_SESSION_EXPIRY = 7 * 24 * 60 * 60; // 7 days in seconds
 
@@ -35,6 +35,16 @@ export function createAuthManager(config: AuthConfig): AuthManager {
 
         CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
         CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
+
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+          token TEXT PRIMARY KEY,
+          user_id INTEGER NOT NULL,
+          email TEXT NOT NULL,
+          expires_at DATETIME NOT NULL,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires_at ON password_reset_tokens(expires_at);
       `);
 
       // Migration: Add role column if it doesn't exist
@@ -348,6 +358,75 @@ export function createAuthManager(config: AuthConfig): AuthManager {
       const row = stmt.get(role);
       return row?.count ?? 0;
     },
+
+    async createPasswordResetToken(email: string): Promise<PasswordResetToken | null> {
+      // Clean up expired tokens first
+      db.prepare(`DELETE FROM password_reset_tokens WHERE expires_at < datetime('now')`).run();
+
+      // Find user by email
+      const user = await this.getUserByEmail(email);
+      if (!user) {
+        return null;
+      }
+
+      // Delete any existing tokens for this user
+      db.prepare(`DELETE FROM password_reset_tokens WHERE user_id = ?`).run(user.id);
+
+      // Create new token (1 hour expiry)
+      const token = randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      const stmt = db.prepare(`
+        INSERT INTO password_reset_tokens (token, user_id, email, expires_at)
+        VALUES (?, ?, ?, ?)
+      `);
+      stmt.run(token, user.id, email, expiresAt.toISOString());
+
+      return {
+        token,
+        userId: user.id,
+        email,
+        expiresAt,
+      };
+    },
+
+    async validatePasswordResetToken(token: string): Promise<PasswordResetToken | null> {
+      const stmt = db.prepare<[string], PasswordResetTokenRow>(`
+        SELECT token, user_id, email, expires_at
+        FROM password_reset_tokens
+        WHERE token = ? AND expires_at > datetime('now')
+      `);
+      const row = stmt.get(token);
+
+      if (!row) {
+        return null;
+      }
+
+      return {
+        token: row.token,
+        userId: row.user_id,
+        email: row.email,
+        expiresAt: new Date(row.expires_at),
+      };
+    },
+
+    async resetPasswordWithToken(token: string, newPassword: string): Promise<boolean> {
+      const resetToken = await this.validatePasswordResetToken(token);
+      if (!resetToken) {
+        return false;
+      }
+
+      // Update password
+      await this.updatePassword(resetToken.userId, newPassword);
+
+      // Delete the used token
+      db.prepare(`DELETE FROM password_reset_tokens WHERE token = ?`).run(token);
+
+      // Invalidate all existing sessions for this user
+      db.prepare(`DELETE FROM sessions WHERE user_id = ?`).run(resetToken.userId);
+
+      return true;
+    },
   };
 }
 
@@ -375,6 +454,13 @@ interface SessionWithUserRow {
   name: string | null;
   role: string;
   created_at: string;
+}
+
+interface PasswordResetTokenRow {
+  token: string;
+  user_id: number;
+  email: string;
+  expires_at: string;
 }
 
 // Password hashing utilities

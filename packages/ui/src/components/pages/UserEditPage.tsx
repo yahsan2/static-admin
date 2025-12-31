@@ -59,18 +59,18 @@ export function UserEditPage() {
     setIsSaving(true);
     setSaveError(null);
 
-    // Validate passwords match if provided
-    if (formData.password && formData.password !== formData.confirmPassword) {
-      setSaveError('Passwords do not match');
-      setIsSaving(false);
-      return;
-    }
-
-    // For new users, password is required
-    if (isNew && !formData.password) {
-      setSaveError('Password is required for new users');
-      setIsSaving(false);
-      return;
+    // For new users only: validate passwords
+    if (isNew) {
+      if (!formData.password) {
+        setSaveError('Password is required for new users');
+        setIsSaving(false);
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setSaveError('Passwords do not match');
+        setIsSaving(false);
+        return;
+      }
     }
 
     const dataToSave: { email: string; name?: string; password?: string; role?: UserRole } = {
@@ -79,8 +79,8 @@ export function UserEditPage() {
       role: formData.role,
     };
 
-    // Only include password if provided
-    if (formData.password) {
+    // Only include password for new users
+    if (isNew && formData.password) {
       dataToSave.password = formData.password;
     }
 
@@ -219,51 +219,55 @@ export function UserEditPage() {
               </p>
             </div>
 
-            {/* Password section */}
-            <div className="border-t pt-6">
-              <h3 className="text-sm font-medium text-gray-900 mb-4">
-                {isNew ? 'Set Password' : 'Change Password'}
-              </h3>
+            {/* Password section - only for new users */}
+            {isNew && (
+              <div className="border-t pt-6">
+                <h3 className="text-sm font-medium text-gray-900 mb-4">
+                  Set Password
+                </h3>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {isNew ? 'Password' : 'New Password'}{' '}
-                    {isNew && <span className="text-red-500">*</span>}
-                  </label>
-                  <input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    required={isNew}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                  {!isNew && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Leave blank to keep current password
-                    </p>
-                  )}
-                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Password <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Confirm Password{' '}
-                    {isNew && <span className="text-red-500">*</span>}
-                  </label>
-                  <input
-                    type="password"
-                    value={formData.confirmPassword}
-                    onChange={(e) =>
-                      setFormData({ ...formData, confirmPassword: e.target.value })
-                    }
-                    required={isNew || !!formData.password}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Confirm Password <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      value={formData.confirmPassword}
+                      onChange={(e) =>
+                        setFormData({ ...formData, confirmPassword: e.target.value })
+                      }
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* Password reset info - only for existing users */}
+            {!isNew && (
+              <div className="border-t pt-6">
+                <p className="text-sm text-gray-500">
+                  パスワードを変更するには、ログイン画面の「パスワードをお忘れですか?」からリセットしてください。
+                </p>
+              </div>
+            )}
           </form>
         )}
       </div>

@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import type { Context } from 'hono';
-import { createApiHandlers, createAuthManager, type ApiContext } from '@static-admin/api';
+import { createApiHandlers, createAuthManager, createMailService, type ApiContext, type MailService } from '@static-admin/api';
 import { createCMS } from '@static-admin/cms';
 import type { StaticAdminConfig, Entry, Schema } from '@static-admin/core';
 import type { PaginatedResult } from '@static-admin/cms';
@@ -114,12 +114,19 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
 
   // Initialize auth if configured
   let auth: ReturnType<typeof createAuthManager> | null = null;
+  let mail: MailService | null = null;
+
   if (config.auth) {
     auth = createAuthManager({
       database: config.auth.database,
       sessionExpiry: config.auth.sessionExpiry,
     });
     auth.initialize().catch(console.error);
+
+    // Initialize mail service for password reset
+    createMailService().then((m) => {
+      mail = m;
+    }).catch(console.error);
   }
 
   /**
@@ -215,6 +222,28 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
         }
 
         return c.json(result, result.success ? 201 : 400);
+      });
+
+      // Password reset routes
+      app.post('/auth/forgot-password', async (c) => {
+        const body = await c.req.json();
+        const baseUrl = new URL(c.req.url).origin;
+        const ctx: ApiContext = {
+          config,
+          auth: auth!,
+          rootDir,
+          mail: mail ?? undefined,
+          baseUrl,
+        };
+        const result = await handlers.requestPasswordReset(ctx, { params: {}, query: {}, body });
+        return c.json(result);
+      });
+
+      app.post('/auth/reset-password', async (c) => {
+        const body = await c.req.json();
+        const ctx: ApiContext = { config, auth: auth!, rootDir };
+        const result = await handlers.resetPassword(ctx, { params: {}, query: {}, body });
+        return c.json(result);
       });
 
       // User management routes
