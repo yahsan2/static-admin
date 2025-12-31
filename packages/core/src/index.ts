@@ -9,6 +9,7 @@ export { fields } from './schema/fields';
 // Types
 export type {
   StaticAdminConfig,
+  InferConfig,
   Collection,
   Singleton,
   CollectionConfig,

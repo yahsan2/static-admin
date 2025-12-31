@@ -60,8 +60,11 @@ export interface Singleton<S extends Schema = Schema> {
   config: SingletonConfig<S>;
 }
 
-/** Main configuration */
-export interface StaticAdminConfig {
+/** Main configuration (base interface for runtime) */
+export interface StaticAdminConfig<
+  TCollections extends Record<string, Collection<any>> = Record<string, Collection<any>>,
+  TSingletons extends Record<string, Singleton<any>> = Record<string, Singleton<any>>,
+> {
   /** Storage settings */
   storage: StorageConfig;
   /** Git integration settings */
@@ -69,7 +72,12 @@ export interface StaticAdminConfig {
   /** Authentication settings */
   auth?: AuthConfig;
   /** Collections (multiple entries) */
-  collections?: Record<string, Collection>;
+  collections?: TCollections;
   /** Singletons (single entry) */
-  singletons?: Record<string, Singleton>;
+  singletons?: TSingletons;
 }
+
+/** Helper type to infer config with preserved collection types */
+export type InferConfig<T> = T extends StaticAdminConfig<infer C, infer S>
+  ? StaticAdminConfig<C, S>
+  : never;

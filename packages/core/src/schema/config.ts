@@ -33,7 +33,7 @@ import type { StaticAdminConfig } from '../types/config';
  * });
  * ```
  */
-export function defineConfig(config: StaticAdminConfig): StaticAdminConfig {
+export function defineConfig<T extends StaticAdminConfig>(config: T): T {
   // Validate and set defaults
   const finalConfig: StaticAdminConfig = {
     storage: {
@@ -57,5 +57,5 @@ export function defineConfig(config: StaticAdminConfig): StaticAdminConfig {
     singletons: config.singletons,
   };
 
-  return finalConfig;
+  return finalConfig as T;
 }
