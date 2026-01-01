@@ -1,13 +1,26 @@
 import { Hono } from 'hono';
 import { handle } from 'hono/vercel';
 import { createStaticAdmin } from '@static-admin/hono';
-import { defineConfig, collection, fields } from '@static-admin/core';
+import { defineConfig, collection, fields, type StorageConfig } from '@static-admin/core';
+
+// Storage configuration: GitHub mode when tokens are set, local mode otherwise
+const storage: StorageConfig = process.env.GITHUB_TOKEN && process.env.GITHUB_OWNER && process.env.GITHUB_REPO
+  ? {
+      kind: 'github',
+      contentPath: 'dev/content',
+      owner: process.env.GITHUB_OWNER,
+      repo: process.env.GITHUB_REPO,
+      branch: process.env.GITHUB_BRANCH || 'main',
+      token: process.env.GITHUB_TOKEN,
+    }
+  : {
+      kind: 'local',
+      contentPath: 'content',
+    };
 
 // Inline config for Vercel deployment
 const baseConfig = defineConfig({
-  storage: {
-    contentPath: 'content',
-  },
+  storage,
   git: {
     autoCommit: false, // Disable git on Vercel
   },
@@ -72,6 +85,7 @@ app.get('/health', (c) => c.json({
   runtime: 'nodejs',
   cwd: process.cwd(),
   turso: !!process.env.TURSO_DATABASE_URL,
+  storage: storage.kind || 'local',
 }));
 
 // Lazy initialize admin

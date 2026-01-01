@@ -3,11 +3,54 @@ import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import type { Context } from 'hono';
 import { createApiHandlers, createAuthManager, createMailService, type ApiContext, type MailService } from '@static-admin/api';
 import { createCMS } from '@static-admin/cms';
-import type { StaticAdminConfig, Entry, Schema } from '@static-admin/core';
+import {
+  createStorageAdapter,
+  createLocalStorageAdapter,
+  createGitHubStorageAdapter,
+  type StaticAdminConfig,
+  type Entry,
+  type Schema,
+  type StorageAdapter,
+} from '@static-admin/core';
 import type { PaginatedResult } from '@static-admin/cms';
 import { authMiddleware, requireAuth, type AuthVariables } from './middleware';
 
 const DEFAULT_SESSION_COOKIE = 'static-admin-session';
+
+/**
+ * Create storage adapter from config with backward compatibility
+ */
+function createStorageAdapterFromConfig(
+  config: StaticAdminConfig,
+  rootDir: string
+): StorageAdapter {
+  const storageConfig = config.storage;
+
+  // GitHub storage
+  if (storageConfig.kind === 'github') {
+    const token = storageConfig.token || process.env.GITHUB_TOKEN;
+    if (!token) {
+      throw new Error(
+        'GitHub storage requires a token. Set storage.token or GITHUB_TOKEN environment variable.'
+      );
+    }
+    return createGitHubStorageAdapter({
+      kind: 'github',
+      owner: storageConfig.owner,
+      repo: storageConfig.repo,
+      branch: storageConfig.branch,
+      contentPath: storageConfig.contentPath,
+      token,
+    });
+  }
+
+  // Local storage (default)
+  return createLocalStorageAdapter({
+    kind: 'local',
+    rootDir,
+    contentPath: storageConfig.contentPath,
+  });
+}
 
 /**
  * Options for createStaticAdmin
@@ -112,6 +155,9 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
     sessionCookie = DEFAULT_SESSION_COOKIE,
   } = options;
 
+  // Create storage adapter based on config
+  const storage: StorageAdapter = createStorageAdapterFromConfig(config, rootDir);
+
   // Initialize auth if configured
   let auth: ReturnType<typeof createAuthManager> | null = null;
   let mail: MailService | null = null;
@@ -182,7 +228,7 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
     if (auth) {
       app.post('/auth/login', async (c) => {
         const body = await c.req.json();
-        const ctx: ApiContext = { config, auth: auth!, rootDir };
+        const ctx: ApiContext = { config, auth: auth!, rootDir, storage };
 
         const result = await handlers.login(ctx, {
           params: {},
@@ -220,13 +266,13 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
 
       // Install routes
       app.get('/install/check', async (c) => {
-        const ctx: ApiContext = { config, auth: auth!, rootDir };
+        const ctx: ApiContext = { config, auth: auth!, rootDir, storage };
         const result = await handlers.checkInstall(ctx, { params: {}, query: {}, body: null });
         return c.json(result);
       });
 
       app.post('/install/setup', async (c) => {
-        const ctx: ApiContext = { config, auth: auth!, rootDir };
+        const ctx: ApiContext = { config, auth: auth!, rootDir, storage };
         const body = await c.req.json();
         const result = await handlers.setupAdmin(ctx, { params: {}, query: {}, body });
 
@@ -252,6 +298,7 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
           config,
           auth: auth!,
           rootDir,
+          storage,
           mail: mail ?? undefined,
           baseUrl,
         };
@@ -261,14 +308,14 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
 
       app.post('/auth/reset-password', async (c) => {
         const body = await c.req.json();
-        const ctx: ApiContext = { config, auth: auth!, rootDir };
+        const ctx: ApiContext = { config, auth: auth!, rootDir, storage };
         const result = await handlers.resetPassword(ctx, { params: {}, query: {}, body });
         return c.json(result);
       });
 
       // User management routes
       app.get('/users', requireAuth(), async (c) => {
-        const ctx: ApiContext = { config, auth: auth!, rootDir, user: c.get('user') };
+        const ctx: ApiContext = { config, auth: auth!, rootDir, storage, user: c.get('user') };
         const result = await handlers.listUsers(ctx, {
           params: {},
           query: c.req.query() as Record<string, string>,
@@ -278,7 +325,7 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
       });
 
       app.get('/users/:id', requireAuth(), async (c) => {
-        const ctx: ApiContext = { config, auth: auth!, rootDir, user: c.get('user') };
+        const ctx: ApiContext = { config, auth: auth!, rootDir, storage, user: c.get('user') };
         const result = await handlers.getUser(ctx, {
           params: { id: c.req.param('id') },
           query: {},
@@ -288,14 +335,14 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
       });
 
       app.post('/users', requireAuth(), async (c) => {
-        const ctx: ApiContext = { config, auth: auth!, rootDir, user: c.get('user') };
+        const ctx: ApiContext = { config, auth: auth!, rootDir, storage, user: c.get('user') };
         const body = await c.req.json();
         const result = await handlers.createUser(ctx, { params: {}, query: {}, body });
         return c.json(result, result.success ? 201 : 400);
       });
 
       app.put('/users/:id', requireAuth(), async (c) => {
-        const ctx: ApiContext = { config, auth: auth!, rootDir, user: c.get('user') };
+        const ctx: ApiContext = { config, auth: auth!, rootDir, storage, user: c.get('user') };
         const body = await c.req.json();
         const result = await handlers.updateUser(ctx, {
           params: { id: c.req.param('id') },
@@ -306,7 +353,7 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
       });
 
       app.delete('/users/:id', requireAuth(), async (c) => {
-        const ctx: ApiContext = { config, auth: auth!, rootDir, user: c.get('user') };
+        const ctx: ApiContext = { config, auth: auth!, rootDir, storage, user: c.get('user') };
         const result = await handlers.deleteUser(ctx, {
           params: { id: c.req.param('id') },
           query: {},
@@ -318,20 +365,20 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
 
     // ===== Schema Routes =====
     app.get('/schema', async (c) => {
-      const ctx: ApiContext = { config, auth: auth!, rootDir, user: c.get('user') };
+      const ctx: ApiContext = { config, auth: auth!, rootDir, storage, user: c.get('user') };
       const result = await handlers.getSchema(ctx, { params: {}, query: {}, body: null });
       return c.json(result);
     });
 
     // ===== Collection Routes =====
     app.get('/collections', async (c) => {
-      const ctx: ApiContext = { config, auth: auth!, rootDir, user: c.get('user') };
+      const ctx: ApiContext = { config, auth: auth!, rootDir, storage, user: c.get('user') };
       const result = await handlers.listCollections(ctx, { params: {}, query: {}, body: null });
       return c.json(result);
     });
 
     app.get('/collections/:collection', async (c) => {
-      const ctx: ApiContext = { config, auth: auth!, rootDir, user: c.get('user') };
+      const ctx: ApiContext = { config, auth: auth!, rootDir, storage, user: c.get('user') };
       const result = await handlers.getCollection(ctx, {
         params: { collection: c.req.param('collection') },
         query: {},
@@ -342,7 +389,7 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
 
     // ===== Entry Routes =====
     app.get('/entries/:collection', async (c) => {
-      const ctx: ApiContext = { config, auth: auth!, rootDir, user: c.get('user') };
+      const ctx: ApiContext = { config, auth: auth!, rootDir, storage, user: c.get('user') };
       const result = await handlers.listEntries(ctx, {
         params: { collection: c.req.param('collection') },
         query: c.req.query() as Record<string, string>,
@@ -352,7 +399,7 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
     });
 
     app.get('/entries/:collection/:slug', async (c) => {
-      const ctx: ApiContext = { config, auth: auth!, rootDir, user: c.get('user') };
+      const ctx: ApiContext = { config, auth: auth!, rootDir, storage, user: c.get('user') };
       const result = await handlers.getEntry(ctx, {
         params: { collection: c.req.param('collection'), slug: c.req.param('slug') },
         query: {},
@@ -366,7 +413,7 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
       : async (_: unknown, next: () => Promise<void>) => next();
 
     app.post('/entries/:collection', protectedRoutes, async (c) => {
-      const ctx: ApiContext = { config, auth: auth!, rootDir, user: c.get('user') };
+      const ctx: ApiContext = { config, auth: auth!, rootDir, storage, user: c.get('user') };
       const body = await c.req.json();
       const result = await handlers.createEntry(ctx, {
         params: { collection: c.req.param('collection') },
@@ -377,7 +424,7 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
     });
 
     app.put('/entries/:collection/:slug', protectedRoutes, async (c) => {
-      const ctx: ApiContext = { config, auth: auth!, rootDir, user: c.get('user') };
+      const ctx: ApiContext = { config, auth: auth!, rootDir, storage, user: c.get('user') };
       const body = await c.req.json();
       const result = await handlers.updateEntry(ctx, {
         params: { collection: c.req.param('collection'), slug: c.req.param('slug') },
@@ -388,7 +435,7 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
     });
 
     app.delete('/entries/:collection/:slug', protectedRoutes, async (c) => {
-      const ctx: ApiContext = { config, auth: auth!, rootDir, user: c.get('user') };
+      const ctx: ApiContext = { config, auth: auth!, rootDir, storage, user: c.get('user') };
       const result = await handlers.deleteEntry(ctx, {
         params: { collection: c.req.param('collection'), slug: c.req.param('slug') },
         query: {},
@@ -399,7 +446,7 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
 
     // ===== Upload Routes =====
     app.post('/upload/:collection/:slug', protectedRoutes, async (c) => {
-      const ctx: ApiContext = { config, auth: auth!, rootDir, user: c.get('user') };
+      const ctx: ApiContext = { config, auth: auth!, rootDir, storage, user: c.get('user') };
       const body = await c.req.json();
       const result = await handlers.uploadImage(ctx, {
         params: { collection: c.req.param('collection'), slug: c.req.param('slug') },

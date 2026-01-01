@@ -1,4 +1,11 @@
-import { ContentManager, type StaticAdminConfig, type Schema, type Entry } from '@static-admin/core';
+import {
+  ContentManager,
+  createLocalStorageAdapter,
+  type StaticAdminConfig,
+  type Schema,
+  type Entry,
+  type StorageAdapter,
+} from '@static-admin/core';
 import { QueryBuilder } from './query-builder';
 import type {
   CMSOptions,
@@ -47,12 +54,19 @@ import type {
 export function createCMS<T extends StaticAdminConfig<any, any>>(
   options: CMSOptions<T>
 ): CMS<T> {
-  const { config, rootDir = process.cwd(), isAuthenticated = false } = options;
+  const { config, rootDir = process.cwd(), storage: providedStorage, isAuthenticated = false } = options;
+
+  // Create or use provided storage adapter
+  const storage: StorageAdapter = providedStorage ?? createLocalStorageAdapter({
+    kind: 'local',
+    rootDir,
+    contentPath: config.storage.contentPath,
+  });
 
   // Create ContentManager instance
   const contentManager = new ContentManager({
     config,
-    rootDir,
+    storage,
   });
 
   // Create collection accessor factory

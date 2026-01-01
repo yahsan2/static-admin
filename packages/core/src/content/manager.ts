@@ -1,76 +1,67 @@
-import * as fs from 'node:fs';
-import * as path from 'node:path';
 import matter from 'gray-matter';
 import slugify from 'slugify';
-import type {
-  StaticAdminConfig,
-  Collection,
-  CollectionConfig,
-} from '../types/config';
+import type { StaticAdminConfig } from '../types/config';
 import type {
   Entry,
   EntryData,
   EntryList,
   EntryListOptions,
-  ContentFile,
-  FrontmatterData,
 } from '../types/content';
 import type { Schema } from '../types/fields';
+import type { StorageAdapter } from '../storage/adapters/types';
 
 export interface ContentManagerOptions {
   config: StaticAdminConfig;
-  rootDir: string;
+  storage: StorageAdapter;
 }
 
 /**
- * ContentManager handles all file system operations for content
+ * ContentManager handles all content operations using a StorageAdapter
  */
 export class ContentManager {
   private config: StaticAdminConfig;
-  private rootDir: string;
-  private contentDir: string;
+  private storage: StorageAdapter;
 
   constructor(options: ContentManagerOptions) {
     this.config = options.config;
-    this.rootDir = options.rootDir;
-    this.contentDir = path.join(this.rootDir, this.config.storage.contentPath);
+    this.storage = options.storage;
   }
 
   /**
-   * Get the content directory path
+   * Get the relative path for a collection's content directory
    */
-  getContentDir(): string {
-    return this.contentDir;
-  }
-
-  /**
-   * Get the full path for a collection's content directory
-   */
-  getCollectionDir(collectionName: string): string {
+  private getCollectionPath(collectionName: string): string {
     const collection = this.config.collections?.[collectionName];
     if (!collection) {
       throw new Error(`Collection "${collectionName}" not found`);
     }
 
     // Parse path pattern (e.g., 'posts/*' -> 'posts')
-    const basePath = collection.config.path.replace(/\/?\*$/, '');
-    return path.join(this.contentDir, basePath);
+    return collection.config.path.replace(/\/?\*$/, '');
   }
 
   /**
-   * Get the full path for an entry
+   * Get the relative path for an entry file
    */
-  getEntryPath(collectionName: string, slug: string): string {
-    const collectionDir = this.getCollectionDir(collectionName);
-    return path.join(collectionDir, slug, 'index.md');
+  private getEntryPath(collectionName: string, slug: string): string {
+    const collectionPath = this.getCollectionPath(collectionName);
+    return `${collectionPath}/${slug}/index.md`;
   }
 
   /**
-   * Get the images directory for an entry
+   * Get the relative path for an entry's images directory
    */
-  getEntryImagesDir(collectionName: string, slug: string): string {
-    const collectionDir = this.getCollectionDir(collectionName);
-    return path.join(collectionDir, slug, 'images');
+  private getEntryImagesPath(collectionName: string, slug: string): string {
+    const collectionPath = this.getCollectionPath(collectionName);
+    return `${collectionPath}/${slug}/images`;
+  }
+
+  /**
+   * Get the relative path for an entry directory
+   */
+  private getEntryDirPath(collectionName: string, slug: string): string {
+    const collectionPath = this.getCollectionPath(collectionName);
+    return `${collectionPath}/${slug}`;
   }
 
   /**
@@ -85,24 +76,17 @@ export class ContentManager {
       throw new Error(`Collection "${collectionName}" not found`);
     }
 
-    const collectionDir = this.getCollectionDir(collectionName);
-
-    // Check if directory exists
-    if (!fs.existsSync(collectionDir)) {
-      return { entries: [], total: 0 };
-    }
+    const collectionPath = this.getCollectionPath(collectionName);
 
     // Read all subdirectories
-    const dirs = fs
-      .readdirSync(collectionDir, { withFileTypes: true })
-      .filter((dirent) => dirent.isDirectory())
-      .map((dirent) => dirent.name);
+    const entries = await this.storage.readDirectory(collectionPath);
+    const dirs = entries.filter((e) => e.isDirectory);
 
     // Read entries
     const allEntries: Entry<S>[] = [];
-    for (const slug of dirs) {
+    for (const dir of dirs) {
       try {
-        const entry = await this.getEntry<S>(collectionName, slug);
+        const entry = await this.getEntry<S>(collectionName, dir.name);
         if (entry) {
           allEntries.push(entry);
         }
@@ -174,14 +158,12 @@ export class ContentManager {
   ): Promise<Entry<S> | null> {
     const entryPath = this.getEntryPath(collectionName, slug);
 
-    if (!fs.existsSync(entryPath)) {
+    const file = await this.storage.readFile(entryPath);
+    if (!file) {
       return null;
     }
 
-    const fileContent = fs.readFileSync(entryPath, 'utf-8');
-    const { data: frontmatter, content } = matter(fileContent);
-
-    const stats = fs.statSync(entryPath);
+    const { data: frontmatter, content } = matter(file.content);
 
     return {
       slug,
@@ -190,9 +172,9 @@ export class ContentManager {
         fields: frontmatter as Entry<S>['data']['fields'],
         content,
       },
-      filePath: path.relative(this.contentDir, entryPath),
-      updatedAt: stats.mtime,
-      createdAt: stats.birthtime,
+      filePath: entryPath,
+      updatedAt: file.metadata.updatedAt,
+      createdAt: file.metadata.createdAt,
     };
   }
 
@@ -201,7 +183,8 @@ export class ContentManager {
    */
   async createEntry<S extends Schema>(
     collectionName: string,
-    data: EntryData<S>
+    data: EntryData<S>,
+    commitMessage?: string
   ): Promise<Entry<S>> {
     const collection = this.config.collections?.[collectionName];
     if (!collection) {
@@ -219,31 +202,26 @@ export class ContentManager {
 
     // Check if entry already exists
     const entryPath = this.getEntryPath(collectionName, slug);
-    if (fs.existsSync(entryPath)) {
+    if (await this.storage.exists(entryPath)) {
       throw new Error(`Entry "${slug}" already exists in "${collectionName}"`);
     }
 
-    // Create directory structure
-    const entryDir = path.dirname(entryPath);
-    fs.mkdirSync(entryDir, { recursive: true });
-
-    // Create images directory
-    const imagesDir = this.getEntryImagesDir(collectionName, slug);
-    fs.mkdirSync(imagesDir, { recursive: true });
-
-    // Write markdown file
+    // Serialize and write markdown file
     const fileContent = this.serializeEntry(data);
-    fs.writeFileSync(entryPath, fileContent, 'utf-8');
+    const message = commitMessage || `Create ${collectionName}/${slug}`;
+    const result = await this.storage.writeFile(entryPath, fileContent, message);
 
-    const stats = fs.statSync(entryPath);
+    // Create images directory (no-op for GitHub)
+    const imagesPath = this.getEntryImagesPath(collectionName, slug);
+    await this.storage.createDirectory(imagesPath);
 
     return {
       slug,
       collection: collectionName,
       data,
-      filePath: path.relative(this.contentDir, entryPath),
-      updatedAt: stats.mtime,
-      createdAt: stats.birthtime,
+      filePath: entryPath,
+      updatedAt: new Date(),
+      createdAt: new Date(),
     };
   }
 
@@ -253,45 +231,50 @@ export class ContentManager {
   async updateEntry<S extends Schema>(
     collectionName: string,
     slug: string,
-    data: EntryData<S>
+    data: EntryData<S>,
+    commitMessage?: string
   ): Promise<Entry<S>> {
     const entryPath = this.getEntryPath(collectionName, slug);
 
-    if (!fs.existsSync(entryPath)) {
+    // Get original entry for createdAt
+    const existing = await this.storage.readFile(entryPath);
+    if (!existing) {
       throw new Error(`Entry "${slug}" not found in "${collectionName}"`);
     }
 
-    // Get original stats for createdAt
-    const originalStats = fs.statSync(entryPath);
-
     // Write updated content
     const fileContent = this.serializeEntry(data);
-    fs.writeFileSync(entryPath, fileContent, 'utf-8');
-
-    const newStats = fs.statSync(entryPath);
+    const message = commitMessage || `Update ${collectionName}/${slug}`;
+    await this.storage.writeFile(entryPath, fileContent, message);
 
     return {
       slug,
       collection: collectionName,
       data,
-      filePath: path.relative(this.contentDir, entryPath),
-      updatedAt: newStats.mtime,
-      createdAt: originalStats.birthtime,
+      filePath: entryPath,
+      updatedAt: new Date(),
+      createdAt: existing.metadata.createdAt,
     };
   }
 
   /**
    * Delete an entry
    */
-  async deleteEntry(collectionName: string, slug: string): Promise<void> {
-    const entryDir = path.dirname(this.getEntryPath(collectionName, slug));
+  async deleteEntry(
+    collectionName: string,
+    slug: string,
+    commitMessage?: string
+  ): Promise<void> {
+    const entryPath = this.getEntryPath(collectionName, slug);
 
-    if (!fs.existsSync(entryDir)) {
+    if (!(await this.storage.exists(entryPath))) {
       throw new Error(`Entry "${slug}" not found in "${collectionName}"`);
     }
 
     // Remove entire entry directory (including images)
-    fs.rmSync(entryDir, { recursive: true, force: true });
+    const entryDirPath = this.getEntryDirPath(collectionName, slug);
+    const message = commitMessage || `Delete ${collectionName}/${slug}`;
+    await this.storage.deleteDirectory(entryDirPath, message);
   }
 
   /**
@@ -301,24 +284,19 @@ export class ContentManager {
     collectionName: string,
     slug: string,
     filename: string,
-    buffer: Buffer
+    buffer: Buffer,
+    commitMessage?: string
   ): Promise<string> {
-    const imagesDir = this.getEntryImagesDir(collectionName, slug);
-
-    // Ensure images directory exists
-    if (!fs.existsSync(imagesDir)) {
-      fs.mkdirSync(imagesDir, { recursive: true });
-    }
-
     // Generate unique filename
-    const ext = path.extname(filename);
-    const baseName = path.basename(filename, ext);
+    const ext = filename.includes('.') ? filename.substring(filename.lastIndexOf('.')) : '';
+    const baseName = filename.includes('.') ? filename.substring(0, filename.lastIndexOf('.')) : filename;
     const safeName = slugify(baseName, { lower: true, strict: true });
     const uniqueName = `${safeName}-${Date.now()}${ext}`;
-    const imagePath = path.join(imagesDir, uniqueName);
 
-    // Write file
-    fs.writeFileSync(imagePath, buffer);
+    const imagePath = `${this.getEntryImagesPath(collectionName, slug)}/${uniqueName}`;
+    const message = commitMessage || `Upload image ${uniqueName}`;
+
+    await this.storage.writeBinaryFile(imagePath, buffer, message);
 
     // Return relative path from entry
     return `images/${uniqueName}`;

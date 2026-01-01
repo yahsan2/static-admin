@@ -1,10 +1,31 @@
 import type { Schema } from './fields';
 
-/** Storage configuration */
-export interface StorageConfig {
+/** Local filesystem storage configuration */
+export interface LocalStorageConfig {
+  /** Storage kind (optional, defaults to 'local') */
+  kind?: 'local';
   /** Path to content directory relative to project root */
   contentPath: string;
 }
+
+/** GitHub API storage configuration */
+export interface GitHubStorageConfig {
+  /** Storage kind */
+  kind: 'github';
+  /** Path to content directory within repository */
+  contentPath: string;
+  /** GitHub repository owner */
+  owner: string;
+  /** GitHub repository name */
+  repo: string;
+  /** Branch name (default: 'main') */
+  branch?: string;
+  /** Personal Access Token (can be set via env var GITHUB_TOKEN) */
+  token?: string;
+}
+
+/** Storage configuration union */
+export type StorageConfig = LocalStorageConfig | GitHubStorageConfig;
 
 /** Git configuration */
 export interface GitConfig {

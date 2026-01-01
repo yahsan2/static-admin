@@ -1,4 +1,4 @@
-import type { StaticAdminConfig } from '@static-admin/core';
+import type { StaticAdminConfig, StorageAdapter } from '@static-admin/core';
 import type { AuthManager, User } from '../auth/types';
 import type { MailService } from '../mail';
 
@@ -7,6 +7,7 @@ export interface ApiContext {
   config: StaticAdminConfig;
   auth: AuthManager;
   rootDir: string;
+  storage: StorageAdapter;
   user?: User;
   mail?: MailService;
   baseUrl?: string;

@@ -1,11 +1,11 @@
 import { ContentManager } from '@static-admin/core';
-import type { ApiContext, ApiRequest, ApiResponse, ApiHandler } from './types';
+import type { ApiHandler } from './types';
 
 /**
  * Upload an image to an entry
  */
 export const uploadImage: ApiHandler = async (ctx, req) => {
-  const { config, rootDir } = ctx;
+  const { config, storage } = ctx;
   const { collection: collectionName, slug } = req.params;
   const body = req.body as { filename: string; data: string };
 
@@ -13,7 +13,7 @@ export const uploadImage: ApiHandler = async (ctx, req) => {
     return { success: false, error: 'Missing filename or data' };
   }
 
-  const contentManager = new ContentManager({ config, rootDir });
+  const contentManager = new ContentManager({ config, storage });
 
   try {
     // Decode base64 data
@@ -24,7 +24,8 @@ export const uploadImage: ApiHandler = async (ctx, req) => {
       collectionName,
       slug,
       body.filename,
-      buffer
+      buffer,
+      `Upload image to ${collectionName}/${slug}`
     );
 
     return {

@@ -15,6 +15,8 @@ export type {
   CollectionConfig,
   SingletonConfig,
   StorageConfig,
+  LocalStorageConfig,
+  GitHubStorageConfig,
   GitConfig,
   AuthConfig,
   RemoteDatabaseConfig,
@@ -56,3 +58,23 @@ export { createValidator, validateEntry, getDefaultValues } from './validation/v
 // Git
 export { GitManager } from './git/manager';
 export type { GitManagerOptions, CommitResult } from './git/manager';
+
+// Storage
+export {
+  createStorageAdapter,
+  createLocalStorageAdapter,
+  createGitHubStorageAdapter,
+} from './storage';
+
+export type {
+  StorageAdapter,
+  StorageAdapterConfig,
+  LocalStorageAdapterConfig,
+  GitHubStorageAdapterConfig,
+  FileMetadata,
+  DirectoryEntry,
+  FileContent,
+  BinaryFileContent,
+  WriteResult,
+  BatchWriteOperation,
+} from './storage';

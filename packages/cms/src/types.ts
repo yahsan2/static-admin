@@ -5,6 +5,7 @@ import type {
   Schema,
   Entry,
   InferSchemaType,
+  StorageAdapter,
 } from '@static-admin/core';
 
 // =============================================================================
@@ -123,6 +124,8 @@ export interface CMSOptions<T> {
   config: T;
   /** Root directory for content (defaults to process.cwd()) */
   rootDir?: string;
+  /** Storage adapter (if not provided, will create local adapter from rootDir) */
+  storage?: StorageAdapter;
   /** Whether the current request is authenticated (enables draft access) */
   isAuthenticated?: boolean;
 }

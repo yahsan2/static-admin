@@ -99,11 +99,11 @@ export const getCollection: ApiHandler = async (ctx, req) => {
  * List entries in a collection
  */
 export const listEntries: ApiHandler = async (ctx, req) => {
-  const { config, rootDir } = ctx;
+  const { config, storage } = ctx;
   const { collection: collectionName } = req.params;
   const { page, limit, sortBy, sortOrder, search } = req.query;
 
-  const contentManager = new ContentManager({ config, rootDir });
+  const contentManager = new ContentManager({ config, storage });
 
   try {
     const result = await contentManager.listEntries(collectionName, {
@@ -141,10 +141,10 @@ export const listEntries: ApiHandler = async (ctx, req) => {
  * Get a single entry
  */
 export const getEntry: ApiHandler = async (ctx, req) => {
-  const { config, rootDir } = ctx;
+  const { config, storage } = ctx;
   const { collection: collectionName, slug } = req.params;
 
-  const contentManager = new ContentManager({ config, rootDir });
+  const contentManager = new ContentManager({ config, storage });
 
   try {
     const entry = await contentManager.getEntry(collectionName, slug);
@@ -166,7 +166,7 @@ export const getEntry: ApiHandler = async (ctx, req) => {
  * Create a new entry
  */
 export const createEntry: ApiHandler = async (ctx, req) => {
-  const { config, rootDir } = ctx;
+  const { config, storage, rootDir } = ctx;
   const { collection: collectionName } = req.params;
   const body = req.body as { fields?: Record<string, unknown>; content?: string; commit?: boolean };
 
@@ -192,19 +192,28 @@ export const createEntry: ApiHandler = async (ctx, req) => {
     };
   }
 
-  const contentManager = new ContentManager({ config, rootDir });
+  const contentManager = new ContentManager({ config, storage });
 
   try {
-    const entry = await contentManager.createEntry(collectionName, {
-      fields: fields as EntryData<Schema>['fields'],
-      content: body.content,
-    });
+    // Generate commit message if git is enabled
+    const commitMessage = config.git?.autoCommit
+      ? config.git.commitMessage?.('create', collectionName, 'new') ||
+        `Create ${collectionName} entry`
+      : undefined;
 
-    // Commit if requested
-    if (body.commit) {
+    const entry = await contentManager.createEntry(
+      collectionName,
+      {
+        fields: fields as EntryData<Schema>['fields'],
+        content: body.content,
+      },
+      commitMessage
+    );
+
+    // Commit if requested (only for local storage with git enabled)
+    if (body.commit && config.storage.kind !== 'github') {
       const gitManager = new GitManager({ rootDir, config: config.git });
-      const filePath = contentManager.getEntryPath(collectionName, entry.slug);
-      await gitManager.add(filePath);
+      await gitManager.add('.');
       await gitManager.commit(`create: ${collectionName}/${entry.slug}`);
     }
 
@@ -221,7 +230,7 @@ export const createEntry: ApiHandler = async (ctx, req) => {
  * Update an existing entry
  */
 export const updateEntry: ApiHandler = async (ctx, req) => {
-  const { config, rootDir } = ctx;
+  const { config, storage, rootDir } = ctx;
   const { collection: collectionName, slug } = req.params;
   const body = req.body as { fields?: Record<string, unknown>; content?: string; commit?: boolean };
 
@@ -230,7 +239,7 @@ export const updateEntry: ApiHandler = async (ctx, req) => {
     return { success: false, error: `Collection "${collectionName}" not found` };
   }
 
-  const contentManager = new ContentManager({ config, rootDir });
+  const contentManager = new ContentManager({ config, storage });
 
   // Get existing entry
   const existing = await contentManager.getEntry(collectionName, slug);
@@ -256,16 +265,26 @@ export const updateEntry: ApiHandler = async (ctx, req) => {
   }
 
   try {
-    const entry = await contentManager.updateEntry(collectionName, slug, {
-      fields: fields as EntryData<Schema>['fields'],
-      content,
-    });
+    // Generate commit message
+    const commitMessage = config.git?.autoCommit
+      ? config.git.commitMessage?.('update', collectionName, slug) ||
+        `Update ${collectionName}/${slug}`
+      : undefined;
 
-    // Commit if requested
-    if (body.commit) {
+    const entry = await contentManager.updateEntry(
+      collectionName,
+      slug,
+      {
+        fields: fields as EntryData<Schema>['fields'],
+        content,
+      },
+      commitMessage
+    );
+
+    // Commit if requested (only for local storage with git enabled)
+    if (body.commit && config.storage.kind !== 'github') {
       const gitManager = new GitManager({ rootDir, config: config.git });
-      const filePath = contentManager.getEntryPath(collectionName, slug);
-      await gitManager.add(filePath);
+      await gitManager.add('.');
       await gitManager.commit(`update: ${collectionName}/${slug}`);
     }
 
@@ -282,13 +301,19 @@ export const updateEntry: ApiHandler = async (ctx, req) => {
  * Delete an entry
  */
 export const deleteEntry: ApiHandler = async (ctx, req) => {
-  const { config, rootDir } = ctx;
+  const { config, storage } = ctx;
   const { collection: collectionName, slug } = req.params;
 
-  const contentManager = new ContentManager({ config, rootDir });
+  const contentManager = new ContentManager({ config, storage });
 
   try {
-    await contentManager.deleteEntry(collectionName, slug);
+    // Generate commit message
+    const commitMessage = config.git?.autoCommit
+      ? config.git.commitMessage?.('delete', collectionName, slug) ||
+        `Delete ${collectionName}/${slug}`
+      : undefined;
+
+    await contentManager.deleteEntry(collectionName, slug, commitMessage);
     return { success: true, data: { deleted: true } };
   } catch (error) {
     return {
