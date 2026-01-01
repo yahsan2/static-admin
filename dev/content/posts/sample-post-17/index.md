@@ -1,7 +1,7 @@
 ---
 title: Sample Post 17
 slug: sample-post-17
-date: '2025-05-17'
+date: '2025-05-17T00:00'
 draft: false
 category: tech
 tags:

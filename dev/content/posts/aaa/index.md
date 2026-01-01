@@ -1,7 +1,7 @@
 ---
 title: aaa
 slug: aaa
-date: '2025-12-31'
+date: '2025-12-31T00:00'
 draft: true
 category: tech
 tags: []

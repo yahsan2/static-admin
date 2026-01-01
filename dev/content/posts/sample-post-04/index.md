@@ -1,7 +1,7 @@
 ---
 title: Sample Post 4
 slug: sample-post-04
-date: '2025-04-04'
+date: '2025-04-04T00:00'
 draft: false
 category: life
 tags:

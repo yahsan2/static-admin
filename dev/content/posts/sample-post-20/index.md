@@ -10,7 +10,6 @@ tags:
 featuredImage: null
 excerpt: This is sample post number 20 for testing the SDK.
 ---
-
 # Sample Post 20
 
 This is the content of sample post number 20.
@@ -21,8 +20,11 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor i
 
 ## Details
 
-- Point 1: Testing the public API
-- Point 2: Verifying pagination works
-- Point 3: Checking filter functionality
+-   Point 1: Testing the public API
+    
+-   Point 2: Verifying pagination works
+    
+-   Point 3: Checking filter functionality
+    
 
 Thank you for reading!

@@ -1,7 +1,7 @@
 ---
 title: Sample Post 12
 slug: sample-post-12
-date: '2025-12-12'
+date: '2025-12-12T00:00'
 draft: false
 category: business
 tags:

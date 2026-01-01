@@ -1,7 +1,7 @@
 ---
 title: Sample Post 6
 slug: sample-post-06
-date: '2025-06-06'
+date: '2025-06-06T00:00'
 draft: false
 category: business
 tags:
