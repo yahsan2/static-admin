@@ -34,24 +34,33 @@ async function getAdmin() {
   return adminPromise;
 }
 
-// Admin API routes
-app.all('/admin/*', async (c) => {
+// Mount admin and public routes
+app.all('/admin/*', async (c, next) => {
   try {
     const admin = await getAdmin();
-    const adminApp = admin.api();
-    return adminApp.fetch(c.req.raw, c.env);
+    const adminApp = new Hono();
+    adminApp.route('/', admin.api());
+    // Rewrite path: /api/admin/xxx -> /xxx
+    const url = new URL(c.req.url);
+    url.pathname = url.pathname.replace('/api/admin', '');
+    const newReq = new Request(url.toString(), c.req.raw);
+    return adminApp.fetch(newReq, c.env);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return c.json({ error: message, stack: error instanceof Error ? error.stack : undefined }, 500);
   }
 });
 
-// Public API routes
-app.all('/public/*', async (c) => {
+app.all('/public/*', async (c, next) => {
   try {
     const admin = await getAdmin();
-    const publicApp = admin.public();
-    return publicApp.fetch(c.req.raw, c.env);
+    const publicApp = new Hono();
+    publicApp.route('/', admin.public());
+    // Rewrite path: /api/public/xxx -> /xxx
+    const url = new URL(c.req.url);
+    url.pathname = url.pathname.replace('/api/public', '');
+    const newReq = new Request(url.toString(), c.req.raw);
+    return publicApp.fetch(newReq, c.env);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return c.json({ error: message, stack: error instanceof Error ? error.stack : undefined }, 500);
