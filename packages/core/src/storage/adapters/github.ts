@@ -155,7 +155,8 @@ export function createGitHubStorageAdapter(
           isDirectory: item.type === 'dir',
           path: relativizePath(item.path),
         }));
-      } catch {
+      } catch (error) {
+        console.error(`[GitHub Storage] readDirectory error for "${githubPath}":`, error);
         return [];
       }
     },
@@ -188,7 +189,8 @@ export function createGitHubStorageAdapter(
             createdAt: new Date(),
           },
         };
-      } catch {
+      } catch (error) {
+        console.error(`[GitHub Storage] readFile error for "${githubPath}":`, error);
         return null;
       }
     },
