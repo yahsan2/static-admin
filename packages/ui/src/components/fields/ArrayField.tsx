@@ -55,7 +55,7 @@ export function ArrayField({
         {items.map((item, index) => (
           <div
             key={index}
-            className="flex items-start gap-2 p-3 bg-base-200 rounded-lg"
+            className="flex items-start gap-2 p-3 bg-base-300 rounded-lg"
           >
             <GripVertical className="w-4 h-4 text-base-content/50 mt-2 cursor-move" />
             <div className="flex-1">
