@@ -1,9 +1,10 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { FileText, LogOut, ExternalLink, Users, LayoutDashboard } from 'lucide-react';
 import { useConfig } from '../../hooks/useConfig';
 import { useAdmin } from '../../context/AdminContext';
 import { cn } from '../../lib/utils';
+import { Menu, MenuTitle, MenuLink } from '../ui/Menu';
 
 export interface SidebarProps {
   className?: string;
@@ -46,48 +47,43 @@ export function Sidebar({ className }: SidebarProps) {
 
       {/* Dashboard link */}
       <nav className="flex-1 overflow-y-auto px-2 py-4">
-        <ul className="menu menu-sm w-full">
-          <li>
-            <Link
-              to="/"
-              className={location.pathname === '/' ? 'active' : ''}
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              Dashboard
-            </Link>
-          </li>
-        </ul>
+        <Menu size="sm" className="w-full">
+          <MenuLink
+            to="/"
+            icon={<LayoutDashboard className="w-4 h-4" />}
+            active={location.pathname === '/'}
+          >
+            Dashboard
+          </MenuLink>
+        </Menu>
 
         {/* Collections */}
-        <ul className="menu menu-sm w-full mt-4">
-          <li className="menu-title">Collections</li>
+        <Menu size="sm" className="w-full mt-4">
+          <MenuTitle>Collections</MenuTitle>
           {collections.map((col) => (
-            <li key={col.name}>
-              <Link
-                to={`/collections/${col.name}`}
-                className={isActive(`/collections/${col.name}`) ? 'active' : ''}
-              >
-                <FileText className="w-4 h-4" />
-                {col.label}
-              </Link>
-            </li>
+            <MenuLink
+              key={col.name}
+              to={`/collections/${col.name}`}
+              icon={<FileText className="w-4 h-4" />}
+              active={isActive(`/collections/${col.name}`)}
+            >
+              {col.label}
+            </MenuLink>
           ))}
-        </ul>
+        </Menu>
 
         {/* Settings - Only show for admin users */}
         {config.auth && user?.role === 'admin' && (
-          <ul className="menu menu-sm w-full mt-4">
-            <li className="menu-title">Settings</li>
-            <li>
-              <Link
-                to="/users"
-                className={isActive('/users') ? 'active' : ''}
-              >
-                <Users className="w-4 h-4" />
-                Users
-              </Link>
-            </li>
-          </ul>
+          <Menu size="sm" className="w-full mt-4">
+            <MenuTitle>Settings</MenuTitle>
+            <MenuLink
+              to="/users"
+              icon={<Users className="w-4 h-4" />}
+              active={isActive('/users')}
+            >
+              Users
+            </MenuLink>
+          </Menu>
         )}
       </nav>
 
