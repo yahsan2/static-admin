@@ -1,5 +1,68 @@
 import { Hono } from 'hono';
 import { handle } from 'hono/vercel';
+import { createStaticAdmin } from '@static-admin/hono';
+import { defineConfig, collection, fields } from '@static-admin/core';
+
+// Inline config for Vercel deployment
+const baseConfig = defineConfig({
+  storage: {
+    contentPath: 'content',
+  },
+  git: {
+    autoCommit: false, // Disable git on Vercel
+  },
+  auth: process.env.TURSO_DATABASE_URL
+    ? {
+        remote: {
+          url: process.env.TURSO_DATABASE_URL,
+          authToken: process.env.TURSO_AUTH_TOKEN || '',
+        },
+        sessionExpiry: 7 * 24 * 60 * 60,
+      }
+    : {
+        database: './admin.db',
+        sessionExpiry: 7 * 24 * 60 * 60,
+      },
+  collections: {
+    posts: collection({
+      label: 'Posts',
+      path: 'posts/*',
+      slugField: 'title',
+      description: 'Blog posts and articles',
+      schema: {
+        title: fields.text({ label: 'Title', required: true }),
+        slug: fields.slug({ label: 'Slug', from: 'title' }),
+        date: fields.datetime({ label: 'Publish Datetime', defaultValue: 'now' }),
+        draft: fields.checkbox({ label: 'Draft', defaultValue: true }),
+        category: fields.select({
+          label: 'Category',
+          options: [
+            { value: 'tech', label: 'Technology' },
+            { value: 'life', label: 'Lifestyle' },
+            { value: 'business', label: 'Business' },
+          ],
+        }),
+        tags: fields.array({ label: 'Tags', itemField: fields.text({ label: 'Tag' }) }),
+        featuredImage: fields.image({ label: 'Featured Image', directory: 'images' }),
+        excerpt: fields.textarea({ label: 'Excerpt' }),
+        content: fields.markdoc({ label: 'Content' }),
+      },
+    }),
+    authors: collection({
+      label: 'Authors',
+      path: 'authors/*',
+      slugField: 'name',
+      description: 'Content authors',
+      schema: {
+        name: fields.text({ label: 'Name', required: true }),
+        slug: fields.slug({ label: 'Slug', from: 'name' }),
+        email: fields.text({ label: 'Email' }),
+        bio: fields.textarea({ label: 'Bio' }),
+        avatar: fields.image({ label: 'Avatar', directory: 'images' }),
+      },
+    }),
+  },
+});
 
 const app = new Hono().basePath('/api');
 
@@ -21,23 +84,7 @@ async function initAdmin() {
   if (adminApp && publicApp) return { adminApp, publicApp };
 
   try {
-    const { createStaticAdmin } = await import('@static-admin/hono');
-    const { config: baseConfig } = await import('../server/api');
-
-    const config = {
-      ...baseConfig,
-      auth: process.env.TURSO_DATABASE_URL
-        ? {
-            remote: {
-              url: process.env.TURSO_DATABASE_URL,
-              authToken: process.env.TURSO_AUTH_TOKEN || '',
-            },
-            sessionExpiry: baseConfig.auth?.sessionExpiry,
-          }
-        : baseConfig.auth,
-    };
-
-    const admin = createStaticAdmin({ config });
+    const admin = createStaticAdmin({ config: baseConfig });
     adminApp = admin.api();
     publicApp = admin.public();
     return { adminApp, publicApp };
