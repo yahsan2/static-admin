@@ -119,6 +119,7 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
   if (config.auth) {
     auth = createAuthManager({
       database: config.auth.database,
+      remote: config.auth.remote,
       sessionExpiry: config.auth.sessionExpiry,
     });
     auth.initialize().catch(console.error);
