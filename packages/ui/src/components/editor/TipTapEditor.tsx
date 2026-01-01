@@ -1,9 +1,17 @@
-import React from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import { marked } from 'marked';
+
+// Convert markdown to HTML
+function markdownToHtml(markdown: string): string {
+  if (!markdown) return '';
+  const html = marked.parse(markdown, { async: false });
+  return typeof html === 'string' ? html : '';
+}
 import {
   Bold,
   Italic,
@@ -33,6 +41,12 @@ export function TipTapEditor({
   placeholder = 'Write your content...',
   className,
 }: TipTapEditorProps) {
+  // Track if this is the initial render to avoid unnecessary conversions
+  const isInitialMount = useRef(true);
+
+  // Convert initial markdown to HTML
+  const initialHtml = useMemo(() => markdownToHtml(value), []);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -44,12 +58,37 @@ export function TipTapEditor({
         placeholder,
       }),
     ],
-    content: value,
+    content: initialHtml,
     onUpdate: ({ editor }) => {
-      // Convert to markdown-ish format
+      // Return HTML (TipTap works with HTML internally)
       onChange(editor.getHTML());
     },
   });
+
+  // Update editor content when value prop changes (after initial mount)
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    if (editor) {
+      // Check if value looks like markdown (starts with # or contains markdown patterns)
+      const looksLikeMarkdown = value && (
+        value.startsWith('#') ||
+        value.includes('\n#') ||
+        value.includes('\n- ') ||
+        value.includes('\n* ') ||
+        !value.startsWith('<')
+      );
+
+      const htmlContent = looksLikeMarkdown ? markdownToHtml(value) : value;
+
+      if (htmlContent !== editor.getHTML()) {
+        editor.commands.setContent(htmlContent);
+      }
+    }
+  }, [editor, value]);
 
   if (!editor) {
     return null;
