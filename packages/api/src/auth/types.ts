@@ -87,8 +87,18 @@ export interface AuthManager {
   resetPasswordWithToken(token: string, newPassword: string): Promise<boolean>;
 }
 
+/** Remote database configuration (Turso, libSQL, etc.) */
+export interface RemoteDatabaseConfig {
+  url: string;
+  authToken: string;
+}
+
 /** Auth config */
 export interface AuthConfig {
-  database: string;
+  /** Path to SQLite database file (for local development) */
+  database?: string;
+  /** Remote database configuration (for Edge/production) */
+  remote?: RemoteDatabaseConfig;
+  /** Session expiry in seconds (default: 7 days) */
   sessionExpiry?: number;
 }

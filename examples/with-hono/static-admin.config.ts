@@ -1,5 +1,19 @@
 import { defineConfig, collection, fields } from '@static-admin/core';
 
+// Use remote DB in production (Edge), SQLite in development
+const authConfig = process.env.TURSO_DATABASE_URL
+  ? {
+      remote: {
+        url: process.env.TURSO_DATABASE_URL,
+        authToken: process.env.TURSO_AUTH_TOKEN!,
+      },
+      sessionExpiry: 7 * 24 * 60 * 60,
+    }
+  : {
+      database: './admin.db',
+      sessionExpiry: 7 * 24 * 60 * 60,
+    };
+
 export default defineConfig({
   storage: {
     contentPath: 'content',
@@ -9,10 +23,7 @@ export default defineConfig({
     commitMessage: (action, collection, slug) =>
       `content(${collection}): ${action} ${slug}`,
   },
-  auth: {
-    database: './admin.db',
-    sessionExpiry: 7 * 24 * 60 * 60, // 7 days
-  },
+  auth: authConfig,
   collections: {
     posts: collection({
       label: 'Posts',

@@ -1,81 +1,133 @@
-import Database from 'better-sqlite3';
-import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
-import type { AuthManager, User, Session, UserWithPassword, AuthConfig, UserRole, PasswordResetToken } from './types';
+import type { AuthManager, User, Session, UserRole, PasswordResetToken, AuthConfig } from './types';
+import type { DatabaseAdapter } from './adapters/types';
+import { createDatabaseAdapter } from './adapters';
+import { hashPassword, verifyPassword, generateSessionId, generateToken } from './password';
 
 const DEFAULT_SESSION_EXPIRY = 7 * 24 * 60 * 60; // 7 days in seconds
 
+// SQL table definitions
+const SCHEMA_SQL = `
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    name TEXT,
+    role TEXT DEFAULT 'editor' NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS sessions (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    expires_at DATETIME NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
+  CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
+
+  CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    token TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    email TEXT NOT NULL,
+    expires_at DATETIME NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires_at ON password_reset_tokens(expires_at);
+`;
+
+// Types for database rows
+interface UserRow {
+  id: number;
+  email: string;
+  password_hash: string;
+  name: string | null;
+  role: string;
+  created_at: string;
+}
+
+interface SessionRow {
+  id: string;
+  user_id: number;
+  expires_at: string;
+}
+
+interface SessionWithUserRow {
+  session_id: string;
+  user_id: number;
+  expires_at: string;
+  email: string;
+  name: string | null;
+  role: string;
+  created_at: string;
+}
+
+interface PasswordResetTokenRow {
+  token: string;
+  user_id: number;
+  email: string;
+  expires_at: string;
+}
+
+interface CountRow {
+  count: number;
+}
+
 /**
- * Create an auth manager with SQLite backend
+ * Create an auth manager with database adapter
  */
 export function createAuthManager(config: AuthConfig): AuthManager {
-  const db = new Database(config.database);
-  const sessionExpiry = config.sessionExpiry ?? DEFAULT_SESSION_EXPIRY;
+  // Determine which adapter to use
+  let db: DatabaseAdapter;
 
-  // Enable WAL mode for better concurrency
-  db.pragma('journal_mode = WAL');
+  if (config.remote) {
+    db = createDatabaseAdapter({
+      type: 'turso',
+      url: config.remote.url,
+      authToken: config.remote.authToken,
+    });
+  } else if (config.database) {
+    db = createDatabaseAdapter({
+      type: 'sqlite',
+      path: config.database,
+    });
+  } else {
+    throw new Error('Auth config must specify either "database" (SQLite path) or "remote" configuration');
+  }
+
+  const sessionExpiry = config.sessionExpiry ?? DEFAULT_SESSION_EXPIRY;
 
   return {
     async initialize(): Promise<void> {
-      db.exec(`
-        CREATE TABLE IF NOT EXISTS users (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          email TEXT UNIQUE NOT NULL,
-          password_hash TEXT NOT NULL,
-          name TEXT,
-          role TEXT DEFAULT 'editor' NOT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE TABLE IF NOT EXISTS sessions (
-          id TEXT PRIMARY KEY,
-          user_id INTEGER NOT NULL,
-          expires_at DATETIME NOT NULL,
-          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
-        CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
-
-        CREATE TABLE IF NOT EXISTS password_reset_tokens (
-          token TEXT PRIMARY KEY,
-          user_id INTEGER NOT NULL,
-          email TEXT NOT NULL,
-          expires_at DATETIME NOT NULL,
-          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires_at ON password_reset_tokens(expires_at);
-      `);
+      await db.execute(SCHEMA_SQL);
 
       // Migration: Add role column if it doesn't exist
-      const tableInfo = db.prepare('PRAGMA table_info(users)').all() as { name: string }[];
+      const tableInfo = await db.queryAll<{ name: string }>('PRAGMA table_info(users)');
       const hasRoleColumn = tableInfo.some((col) => col.name === 'role');
 
       if (!hasRoleColumn) {
-        db.exec(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'editor' NOT NULL`);
+        await db.execute(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'editor' NOT NULL`);
         // Set first user as admin (for existing installations)
-        db.exec(`UPDATE users SET role = 'admin' WHERE id = (SELECT MIN(id) FROM users)`);
+        await db.execute(`UPDATE users SET role = 'admin' WHERE id = (SELECT MIN(id) FROM users)`);
       }
     },
 
     async hasAnyUsers(): Promise<boolean> {
-      const stmt = db.prepare<[], { count: number }>(`SELECT COUNT(*) as count FROM users`);
-      const row = stmt.get();
+      const row = await db.queryOne<CountRow>(`SELECT COUNT(*) as count FROM users`);
       return (row?.count ?? 0) > 0;
     },
 
     async createUser(email: string, password: string, name?: string, role: UserRole = 'editor'): Promise<User> {
       const passwordHash = hashPassword(password);
 
-      const stmt = db.prepare(`
-        INSERT INTO users (email, password_hash, name, role)
-        VALUES (?, ?, ?, ?)
-      `);
-
-      const result = stmt.run(email, passwordHash, name ?? null, role);
+      const result = await db.run(
+        `INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, ?)`,
+        [email, passwordHash, name ?? null, role]
+      );
 
       return {
-        id: result.lastInsertRowid as number,
+        id: Number(result.lastInsertRowid),
         email,
         name: name ?? null,
         role,
@@ -85,12 +137,10 @@ export function createAuthManager(config: AuthConfig): AuthManager {
 
     async login(email: string, password: string): Promise<{ user: User; session: Session }> {
       // Get user
-      const stmt = db.prepare<[string], UserRow>(`
-        SELECT id, email, password_hash, name, role, created_at
-        FROM users
-        WHERE email = ?
-      `);
-      const row = stmt.get(email);
+      const row = await db.queryOne<UserRow>(
+        `SELECT id, email, password_hash, name, role, created_at FROM users WHERE email = ?`,
+        [email]
+      );
 
       if (!row) {
         throw new Error('Invalid email or password');
@@ -105,11 +155,10 @@ export function createAuthManager(config: AuthConfig): AuthManager {
       const sessionId = generateSessionId();
       const expiresAt = new Date(Date.now() + sessionExpiry * 1000);
 
-      const sessionStmt = db.prepare(`
-        INSERT INTO sessions (id, user_id, expires_at)
-        VALUES (?, ?, ?)
-      `);
-      sessionStmt.run(sessionId, row.id, expiresAt.toISOString());
+      await db.run(
+        `INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)`,
+        [sessionId, row.id, expiresAt.toISOString()]
+      );
 
       return {
         user: {
@@ -128,20 +177,16 @@ export function createAuthManager(config: AuthConfig): AuthManager {
     },
 
     async logout(sessionId: string): Promise<void> {
-      const stmt = db.prepare(`DELETE FROM sessions WHERE id = ?`);
-      stmt.run(sessionId);
+      await db.run(`DELETE FROM sessions WHERE id = ?`, [sessionId]);
     },
 
     async getSession(sessionId: string): Promise<{ user: User; session: Session } | null> {
       // Clean up expired sessions first
-      const cleanupStmt = db.prepare(`
-        DELETE FROM sessions WHERE expires_at < datetime('now')
-      `);
-      cleanupStmt.run();
+      await db.run(`DELETE FROM sessions WHERE expires_at < datetime('now')`);
 
       // Get session with user
-      const stmt = db.prepare<[string], SessionWithUserRow>(`
-        SELECT
+      const row = await db.queryOne<SessionWithUserRow>(
+        `SELECT
           s.id as session_id,
           s.user_id,
           s.expires_at,
@@ -151,9 +196,9 @@ export function createAuthManager(config: AuthConfig): AuthManager {
           u.created_at
         FROM sessions s
         JOIN users u ON s.user_id = u.id
-        WHERE s.id = ? AND s.expires_at > datetime('now')
-      `);
-      const row = stmt.get(sessionId);
+        WHERE s.id = ? AND s.expires_at > datetime('now')`,
+        [sessionId]
+      );
 
       if (!row) {
         return null;
@@ -178,13 +223,16 @@ export function createAuthManager(config: AuthConfig): AuthManager {
     async refreshSession(sessionId: string): Promise<Session | null> {
       const expiresAt = new Date(Date.now() + sessionExpiry * 1000);
 
-      const stmt = db.prepare(`
-        UPDATE sessions
-        SET expires_at = ?
-        WHERE id = ? AND expires_at > datetime('now')
-        RETURNING id, user_id, expires_at
-      `);
-      const row = stmt.get(expiresAt.toISOString(), sessionId) as SessionRow | undefined;
+      // Update and fetch the session
+      await db.run(
+        `UPDATE sessions SET expires_at = ? WHERE id = ? AND expires_at > datetime('now')`,
+        [expiresAt.toISOString(), sessionId]
+      );
+
+      const row = await db.queryOne<SessionRow>(
+        `SELECT id, user_id, expires_at FROM sessions WHERE id = ?`,
+        [sessionId]
+      );
 
       if (!row) {
         return null;
@@ -198,12 +246,10 @@ export function createAuthManager(config: AuthConfig): AuthManager {
     },
 
     async getUserById(id: number): Promise<User | null> {
-      const stmt = db.prepare<[number], UserRow>(`
-        SELECT id, email, name, role, created_at
-        FROM users
-        WHERE id = ?
-      `);
-      const row = stmt.get(id);
+      const row = await db.queryOne<UserRow>(
+        `SELECT id, email, name, role, created_at FROM users WHERE id = ?`,
+        [id]
+      );
 
       if (!row) {
         return null;
@@ -219,12 +265,10 @@ export function createAuthManager(config: AuthConfig): AuthManager {
     },
 
     async getUserByEmail(email: string): Promise<User | null> {
-      const stmt = db.prepare<[string], UserRow>(`
-        SELECT id, email, name, role, created_at
-        FROM users
-        WHERE email = ?
-      `);
-      const row = stmt.get(email);
+      const row = await db.queryOne<UserRow>(
+        `SELECT id, email, name, role, created_at FROM users WHERE email = ?`,
+        [email]
+      );
 
       if (!row) {
         return null;
@@ -241,19 +285,12 @@ export function createAuthManager(config: AuthConfig): AuthManager {
 
     async updatePassword(userId: number, newPassword: string): Promise<void> {
       const passwordHash = hashPassword(newPassword);
-
-      const stmt = db.prepare(`
-        UPDATE users
-        SET password_hash = ?
-        WHERE id = ?
-      `);
-      stmt.run(passwordHash, userId);
+      await db.run(`UPDATE users SET password_hash = ? WHERE id = ?`, [passwordHash, userId]);
     },
 
     async deleteUser(userId: number): Promise<void> {
       // Sessions will be deleted via ON DELETE CASCADE
-      const stmt = db.prepare(`DELETE FROM users WHERE id = ?`);
-      stmt.run(userId);
+      await db.run(`DELETE FROM users WHERE id = ?`, [userId]);
     },
 
     async listUsers(options: { page?: number; limit?: number } = {}): Promise<{
@@ -265,18 +302,14 @@ export function createAuthManager(config: AuthConfig): AuthManager {
       const offset = (page - 1) * limit;
 
       // Count total
-      const countStmt = db.prepare<[], { count: number }>(`SELECT COUNT(*) as count FROM users`);
-      const countResult = countStmt.get();
+      const countResult = await db.queryOne<CountRow>(`SELECT COUNT(*) as count FROM users`);
       const total = countResult?.count ?? 0;
 
       // Fetch paginated users
-      const stmt = db.prepare<[number, number], UserRow>(`
-        SELECT id, email, name, role, created_at
-        FROM users
-        ORDER BY created_at DESC
-        LIMIT ? OFFSET ?
-      `);
-      const rows = stmt.all(limit, offset);
+      const rows = await db.queryAll<UserRow>(
+        `SELECT id, email, name, role, created_at FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+        [limit, offset]
+      );
 
       return {
         items: rows.map((row) => ({
@@ -332,11 +365,12 @@ export function createAuthManager(config: AuthConfig): AuthManager {
       }
 
       values.push(userId);
-      const stmt = db.prepare<(string | number)[], UserRow>(`
-        UPDATE users SET ${updates.join(', ')} WHERE id = ?
-        RETURNING id, email, name, role, created_at
-      `);
-      const row = stmt.get(...values);
+      await db.run(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, values);
+
+      const row = await db.queryOne<UserRow>(
+        `SELECT id, email, name, role, created_at FROM users WHERE id = ?`,
+        [userId]
+      );
 
       if (!row) {
         throw new Error('User not found');
@@ -352,16 +386,16 @@ export function createAuthManager(config: AuthConfig): AuthManager {
     },
 
     async countUsersByRole(role: UserRole): Promise<number> {
-      const stmt = db.prepare<[string], { count: number }>(`
-        SELECT COUNT(*) as count FROM users WHERE role = ?
-      `);
-      const row = stmt.get(role);
+      const row = await db.queryOne<CountRow>(
+        `SELECT COUNT(*) as count FROM users WHERE role = ?`,
+        [role]
+      );
       return row?.count ?? 0;
     },
 
     async createPasswordResetToken(email: string): Promise<PasswordResetToken | null> {
       // Clean up expired tokens first
-      db.prepare(`DELETE FROM password_reset_tokens WHERE expires_at < datetime('now')`).run();
+      await db.run(`DELETE FROM password_reset_tokens WHERE expires_at < datetime('now')`);
 
       // Find user by email
       const user = await this.getUserByEmail(email);
@@ -370,17 +404,16 @@ export function createAuthManager(config: AuthConfig): AuthManager {
       }
 
       // Delete any existing tokens for this user
-      db.prepare(`DELETE FROM password_reset_tokens WHERE user_id = ?`).run(user.id);
+      await db.run(`DELETE FROM password_reset_tokens WHERE user_id = ?`, [user.id]);
 
       // Create new token (1 hour expiry)
-      const token = randomBytes(32).toString('hex');
+      const token = generateToken();
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-      const stmt = db.prepare(`
-        INSERT INTO password_reset_tokens (token, user_id, email, expires_at)
-        VALUES (?, ?, ?, ?)
-      `);
-      stmt.run(token, user.id, email, expiresAt.toISOString());
+      await db.run(
+        `INSERT INTO password_reset_tokens (token, user_id, email, expires_at) VALUES (?, ?, ?, ?)`,
+        [token, user.id, email, expiresAt.toISOString()]
+      );
 
       return {
         token,
@@ -391,12 +424,10 @@ export function createAuthManager(config: AuthConfig): AuthManager {
     },
 
     async validatePasswordResetToken(token: string): Promise<PasswordResetToken | null> {
-      const stmt = db.prepare<[string], PasswordResetTokenRow>(`
-        SELECT token, user_id, email, expires_at
-        FROM password_reset_tokens
-        WHERE token = ? AND expires_at > datetime('now')
-      `);
-      const row = stmt.get(token);
+      const row = await db.queryOne<PasswordResetTokenRow>(
+        `SELECT token, user_id, email, expires_at FROM password_reset_tokens WHERE token = ? AND expires_at > datetime('now')`,
+        [token]
+      );
 
       if (!row) {
         return null;
@@ -420,66 +451,12 @@ export function createAuthManager(config: AuthConfig): AuthManager {
       await this.updatePassword(resetToken.userId, newPassword);
 
       // Delete the used token
-      db.prepare(`DELETE FROM password_reset_tokens WHERE token = ?`).run(token);
+      await db.run(`DELETE FROM password_reset_tokens WHERE token = ?`, [token]);
 
       // Invalidate all existing sessions for this user
-      db.prepare(`DELETE FROM sessions WHERE user_id = ?`).run(resetToken.userId);
+      await db.run(`DELETE FROM sessions WHERE user_id = ?`, [resetToken.userId]);
 
       return true;
     },
   };
-}
-
-// Types for SQLite rows
-interface UserRow {
-  id: number;
-  email: string;
-  password_hash: string;
-  name: string | null;
-  role: string;
-  created_at: string;
-}
-
-interface SessionRow {
-  id: string;
-  user_id: number;
-  expires_at: string;
-}
-
-interface SessionWithUserRow {
-  session_id: string;
-  user_id: number;
-  expires_at: string;
-  email: string;
-  name: string | null;
-  role: string;
-  created_at: string;
-}
-
-interface PasswordResetTokenRow {
-  token: string;
-  user_id: number;
-  email: string;
-  expires_at: string;
-}
-
-// Password hashing utilities
-function hashPassword(password: string): string {
-  const salt = randomBytes(16).toString('hex');
-  const hash = scryptSync(password, salt, 64).toString('hex');
-  return `${salt}:${hash}`;
-}
-
-function verifyPassword(password: string, storedHash: string): boolean {
-  const [salt, hash] = storedHash.split(':');
-  if (!salt || !hash) {
-    return false;
-  }
-  const inputHash = scryptSync(password, salt, 64);
-  const storedHashBuffer = Buffer.from(hash, 'hex');
-  return timingSafeEqual(inputHash, storedHashBuffer);
-}
-
-function generateSessionId(): string {
-  return randomBytes(32).toString('hex');
 }

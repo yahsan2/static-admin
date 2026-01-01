@@ -14,10 +14,20 @@ export interface GitConfig {
   commitMessage?: (action: 'create' | 'update' | 'delete', collection: string, slug: string) => string;
 }
 
+/** Remote database configuration (Turso, libSQL, etc.) */
+export interface RemoteDatabaseConfig {
+  /** Database URL (e.g., libsql://xxx.turso.io) */
+  url: string;
+  /** Auth token */
+  authToken: string;
+}
+
 /** Auth configuration */
 export interface AuthConfig {
-  /** Path to SQLite database file */
-  database: string;
+  /** Path to SQLite database file (for local development) */
+  database?: string;
+  /** Remote database configuration (for Edge/production) */
+  remote?: RemoteDatabaseConfig;
   /** Session expiry in seconds (default: 7 days) */
   sessionExpiry?: number;
 }

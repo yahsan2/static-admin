@@ -1,2 +1,2 @@
 export { createAuthManager } from './manager';
-export type { AuthManager, User, Session, AuthConfig } from './types';
+export type { AuthManager, User, Session, AuthConfig, RemoteDatabaseConfig } from './types';

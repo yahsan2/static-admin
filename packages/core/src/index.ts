@@ -17,6 +17,7 @@ export type {
   StorageConfig,
   GitConfig,
   AuthConfig,
+  RemoteDatabaseConfig,
 } from './types/config';
 
 export type {

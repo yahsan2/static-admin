@@ -26,6 +26,8 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "@noble/hashes": "^1.7.1",
     "@static-admin/core": "workspace:*",
     "better-sqlite3": "^11.7.0",
     "nodemailer": "^7.0.12"
