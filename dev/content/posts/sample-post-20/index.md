@@ -8,7 +8,7 @@ tags:
   - sample
   - test
 featuredImage: null
-excerpt: 'This is sample post number 20 for testing the SDK.'
+excerpt: This is sample post number 20 for testing the SDK.
 ---
 
 # Sample Post 20
