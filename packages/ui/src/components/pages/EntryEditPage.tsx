@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Trash2, Copy, Eye } from 'lucide-react';
+import { Trash2, Copy, Eye, AlertTriangle } from 'lucide-react';
 import { useEntry } from '../../hooks/useEntry';
 import { useConfig } from '../../hooks/useConfig';
 import { useAutoSave, type SaveOptions } from '../../hooks/useAutoSave';
+import { useDraftStorage, type DraftData } from '../../hooks/useDraftStorage';
 import { getDefaultValues } from '../../lib/schema';
 import { formatRelativeTime } from '../../lib/utils';
 import { FieldRenderer } from '../fields/FieldRenderer';
@@ -16,6 +17,7 @@ export function EntryEditPage() {
   }>();
   const navigate = useNavigate();
   const { getCollection } = useConfig();
+  const { loadDraft, deleteDraft } = useDraftStorage();
 
   const collection = collectionName ? getCollection(collectionName) : undefined;
   const isNew = !slug;
@@ -28,7 +30,31 @@ export function EntryEditPage() {
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [content, setContent] = useState('');
 
+  // Draft recovery state
+  const [pendingDraft, setPendingDraft] = useState<DraftData | null>(null);
+  const [draftChecked, setDraftChecked] = useState(false);
+
   const isDraft = formData.draft === true;
+
+  // Check for existing draft on mount
+  useEffect(() => {
+    if (!collectionName || !slug || draftChecked) return;
+
+    const checkDraft = async () => {
+      try {
+        const draft = await loadDraft(collectionName, slug);
+        if (draft) {
+          setPendingDraft(draft);
+        }
+      } catch (error) {
+        console.error('Failed to check for draft:', error);
+      } finally {
+        setDraftChecked(true);
+      }
+    };
+
+    checkDraft();
+  }, [collectionName, slug, draftChecked, loadDraft]);
 
   // Initialize form data
   useEffect(() => {
@@ -42,6 +68,26 @@ export function EntryEditPage() {
       }
     }
   }, [collection, entry, isNew]);
+
+  // Handle draft recovery
+  const handleRestoreDraft = useCallback(() => {
+    if (pendingDraft) {
+      setFormData(pendingDraft.fields);
+      setContent(pendingDraft.content);
+      setPendingDraft(null);
+    }
+  }, [pendingDraft]);
+
+  const handleDiscardDraft = useCallback(async () => {
+    if (collectionName && slug) {
+      try {
+        await deleteDraft(collectionName, slug);
+      } catch (error) {
+        console.error('Failed to delete draft:', error);
+      }
+    }
+    setPendingDraft(null);
+  }, [collectionName, slug, deleteDraft]);
 
   // Prepare save data
   const getSaveData = useCallback(
@@ -88,6 +134,8 @@ export function EntryEditPage() {
     markAsChanged,
     saveWithCommit,
   } = useAutoSave({
+    collectionName: collectionName || '',
+    slug: slug || '',
     data: { formData, content },
     onSave: handleSave,
     enabled: !isNew && !!collection,
@@ -202,6 +250,32 @@ export function EntryEditPage() {
           />
         </div>
       </header>
+
+      {/* Draft Recovery Alert */}
+      {pendingDraft && (
+        <div className="alert alert-warning mx-6 mt-4 flex justify-between">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5" />
+            <span>
+              Unsaved draft found ({formatRelativeTime(pendingDraft.savedAt)})
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleRestoreDraft}
+              className="btn btn-sm btn-warning"
+            >
+              Restore
+            </button>
+            <button
+              onClick={handleDiscardDraft}
+              className="btn btn-sm btn-ghost"
+            >
+              Discard
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main content */}
       <div className="flex flex-1 bg-base-100 overflow-hidden">

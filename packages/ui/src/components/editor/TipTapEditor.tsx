@@ -81,13 +81,14 @@ export function TipTapEditor({
   });
 
   // Update editor content when value prop changes (after initial mount)
+  // Skip if editor is focused (user is actively typing)
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
     }
 
-    if (editor) {
+    if (editor && !editor.isFocused) {
       // Check if value looks like markdown (starts with # or contains markdown patterns)
       const looksLikeMarkdown = value && (
         value.startsWith('#') ||

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useHmrBlock } from './useHmrBlock';
+import { useDraftStorage } from './useDraftStorage';
 
 const AUTO_SAVE_DELAY = 5000;
 
@@ -8,9 +9,16 @@ export interface SaveOptions {
   fieldsOverride?: Record<string, unknown>;
 }
 
-export interface UseAutoSaveOptions<T> {
-  data: T;
-  onSave: (data: T, options: SaveOptions) => Promise<boolean>;
+export interface AutoSaveData {
+  formData: Record<string, unknown>;
+  content: string;
+}
+
+export interface UseAutoSaveOptions {
+  collectionName: string;
+  slug: string;
+  data: AutoSaveData;
+  onSave: (data: AutoSaveData, options: SaveOptions) => Promise<boolean>;
   enabled: boolean;
 }
 
@@ -24,12 +32,15 @@ export interface UseAutoSaveResult {
   saveWithCommit: (fieldsOverride?: Record<string, unknown>) => Promise<boolean>;
 }
 
-export function useAutoSave<T>({
+export function useAutoSave({
+  collectionName,
+  slug,
   data,
   onSave,
   enabled,
-}: UseAutoSaveOptions<T>): UseAutoSaveResult {
+}: UseAutoSaveOptions): UseAutoSaveResult {
   const { blockHmr } = useHmrBlock();
+  const { saveDraft, deleteDraft } = useDraftStorage();
 
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -45,24 +56,29 @@ export function useAutoSave<T>({
     dataRef.current = data;
   }, [data]);
 
-  // Auto-save function (without commit)
+  // Auto-save function - saves to IndexedDB only
   const performAutoSave = useCallback(async () => {
-    if (!enabled || !hasUnsavedChanges) return;
+    if (!enabled || !hasUnsavedChanges || !slug) return;
 
     setIsAutoSaving(true);
     setSaveError(null);
-    blockHmr(2000);
 
-    const success = await onSave(dataRef.current, { commit: false });
-
-    setIsAutoSaving(false);
-    if (success) {
+    try {
+      await saveDraft(
+        collectionName,
+        slug,
+        dataRef.current.formData,
+        dataRef.current.content
+      );
       setHasUnsavedChanges(false);
       setLastSavedAt(new Date());
-    } else {
+    } catch (error) {
       setSaveError('Auto-save failed');
+      console.error('Auto-save to IndexedDB failed:', error);
+    } finally {
+      setIsAutoSaving(false);
     }
-  }, [enabled, hasUnsavedChanges, onSave, blockHmr]);
+  }, [enabled, hasUnsavedChanges, collectionName, slug, saveDraft]);
 
   // Debounced auto-save effect
   useEffect(() => {
@@ -89,6 +105,7 @@ export function useAutoSave<T>({
     setHasUnsavedChanges(true);
   }, []);
 
+  // Save with commit - calls API and deletes from IndexedDB
   const saveWithCommit = useCallback(
     async (fieldsOverride?: Record<string, unknown>) => {
       // Cancel any pending auto-save
@@ -110,13 +127,21 @@ export function useAutoSave<T>({
       if (success) {
         setHasUnsavedChanges(false);
         setLastSavedAt(new Date());
+        // Delete draft from IndexedDB after successful commit
+        if (slug) {
+          try {
+            await deleteDraft(collectionName, slug);
+          } catch (error) {
+            console.error('Failed to delete draft from IndexedDB:', error);
+          }
+        }
       } else {
         setSaveError('Failed to save entry');
       }
 
       return success;
     },
-    [onSave, blockHmr]
+    [onSave, blockHmr, collectionName, slug, deleteDraft]
   );
 
   return {
