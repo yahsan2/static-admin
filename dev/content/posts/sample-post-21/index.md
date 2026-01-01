@@ -12,8 +12,6 @@ excerpt: This is sample post number 21 for testing the SDK.
 ---
 # Sample Post 21 !!!
 
-a
-
 This is the content of sample post number 21!
 
 ## Introduction
