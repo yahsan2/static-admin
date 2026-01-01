@@ -77,10 +77,13 @@ export class ContentManager {
     }
 
     const collectionPath = this.getCollectionPath(collectionName);
+    console.log('[ContentManager] listEntries:', { collectionName, collectionPath });
 
     // Read all subdirectories
     const entries = await this.storage.readDirectory(collectionPath);
+    console.log('[ContentManager] readDirectory result:', { entriesCount: entries.length });
     const dirs = entries.filter((e) => e.isDirectory);
+    console.log('[ContentManager] directories:', { dirsCount: dirs.length });
 
     // Read entries
     const allEntries: Entry<S>[] = [];
