@@ -103,8 +103,6 @@ export const listEntries: ApiHandler = async (ctx, req) => {
   const { collection: collectionName } = req.params;
   const { page, limit, sortBy, sortOrder, search } = req.query;
 
-  console.log('[API] listEntries:', { collectionName, hasStorage: !!storage });
-
   const contentManager = new ContentManager({ config, storage });
 
   try {

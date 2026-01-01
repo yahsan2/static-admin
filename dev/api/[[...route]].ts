@@ -88,39 +88,6 @@ app.get('/health', (c) => c.json({
   storage: storage.kind || 'local',
 }));
 
-// Debug endpoint to test storage
-app.get('/debug/storage', async (c) => {
-  if (storage.kind !== 'github') {
-    return c.json({ error: 'Not in GitHub mode' });
-  }
-
-  try {
-    const { createGitHubStorageAdapter } = await import('@static-admin/core');
-    const adapter = createGitHubStorageAdapter({
-      owner: 'yahsan2',
-      repo: 'static-admin',
-      branch: 'main',
-      contentPath: 'dev/content',
-      token: process.env.GITHUB_TOKEN!,
-    });
-
-    const postsDir = await adapter.readDirectory('posts');
-    const firstPost = postsDir.length > 0 ? postsDir[0] : null;
-    let firstPostContent = null;
-    if (firstPost) {
-      firstPostContent = await adapter.readFile(`posts/${firstPost.name}/index.md`);
-    }
-
-    return c.json({
-      postsDir,
-      firstPost,
-      firstPostContentPreview: firstPostContent?.content?.slice(0, 200),
-    });
-  } catch (e) {
-    return c.json({ error: e instanceof Error ? e.message : String(e) }, 500);
-  }
-});
-
 // Lazy initialize admin
 let adminApp: Hono | null = null;
 let publicApp: Hono | null = null;

@@ -26,12 +26,6 @@ function createStorageAdapterFromConfig(
 ): StorageAdapter {
   const storageConfig = config.storage;
 
-  console.log('[Static Admin] Creating storage adapter:', {
-    kind: storageConfig.kind,
-    contentPath: storageConfig.contentPath,
-    hasToken: !!(storageConfig.kind === 'github' && (storageConfig.token || process.env.GITHUB_TOKEN)),
-  });
-
   // GitHub storage
   if (storageConfig.kind === 'github') {
     const token = storageConfig.token || process.env.GITHUB_TOKEN;
@@ -40,7 +34,6 @@ function createStorageAdapterFromConfig(
         'GitHub storage requires a token. Set storage.token or GITHUB_TOKEN environment variable.'
       );
     }
-    console.log('[Static Admin] Using GitHub storage adapter');
     return createGitHubStorageAdapter({
       kind: 'github',
       owner: storageConfig.owner,
@@ -52,7 +45,6 @@ function createStorageAdapterFromConfig(
   }
 
   // Local storage (default)
-  console.log('[Static Admin] Using Local storage adapter');
   return createLocalStorageAdapter({
     kind: 'local',
     rootDir,
