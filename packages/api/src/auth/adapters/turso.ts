@@ -13,7 +13,15 @@ export function createTursoAdapter(config: TursoAdapterConfig): DatabaseAdapter 
 
   return {
     async execute(sql: string): Promise<void> {
-      await client.execute(sql);
+      // Split SQL into individual statements for Turso compatibility
+      const statements = sql
+        .split(';')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+
+      for (const statement of statements) {
+        await client.execute(statement);
+      }
     },
 
     async queryOne<T>(sql: string, params: unknown[] = []): Promise<T | undefined> {
