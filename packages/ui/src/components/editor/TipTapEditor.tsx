@@ -5,12 +5,25 @@ import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { marked } from 'marked';
+import TurndownService from 'turndown';
 
 // Convert markdown to HTML
 function markdownToHtml(markdown: string): string {
   if (!markdown) return '';
   const html = marked.parse(markdown, { async: false });
   return typeof html === 'string' ? html : '';
+}
+
+// Convert HTML to Markdown
+const turndownService = new TurndownService({
+  headingStyle: 'atx',
+  codeBlockStyle: 'fenced',
+  bulletListMarker: '-',
+});
+
+function htmlToMarkdown(html: string): string {
+  if (!html) return '';
+  return turndownService.turndown(html);
 }
 import {
   Bold,
@@ -60,8 +73,10 @@ export function TipTapEditor({
     ],
     content: initialHtml,
     onUpdate: ({ editor }) => {
-      // Return HTML (TipTap works with HTML internally)
-      onChange(editor.getHTML());
+      // Convert HTML to Markdown before returning
+      const html = editor.getHTML();
+      const markdown = htmlToMarkdown(html);
+      onChange(markdown);
     },
   });
 
