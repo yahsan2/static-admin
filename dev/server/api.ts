@@ -107,7 +107,7 @@ export function createApiApp() {
   app.use('/content/*', serveStatic({ root: './' }));
 
   // Mount APIs
-  app.route('/api', admin.api());        // Admin API (CRUD, auth)
+  app.route('/api/admin', admin.api());     // Admin API (CRUD, auth)
   app.route('/api/public', admin.public()); // Public API (read-only)
 
   return app;

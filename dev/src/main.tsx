@@ -9,7 +9,7 @@ function App() {
 
   // Admin routes
   if (path.startsWith('/admin')) {
-    return <StaticAdminApp basePath="/admin" apiBasePath="/api" />;
+    return <StaticAdminApp basePath="/admin" apiBasePath="/api/admin" />;
   }
 
   // Home page
