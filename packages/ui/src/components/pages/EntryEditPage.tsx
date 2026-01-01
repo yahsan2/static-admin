@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Save, Trash2, Copy, Eye, ChevronRight } from 'lucide-react';
+import { Trash2, Copy, Eye } from 'lucide-react';
 import { useEntry } from '../../hooks/useEntry';
 import { useConfig } from '../../hooks/useConfig';
-import { useHmrBlock } from '../../hooks/useHmrBlock';
+import { useAutoSave, type SaveOptions } from '../../hooks/useAutoSave';
 import { getDefaultValues } from '../../lib/schema';
+import { formatRelativeTime } from '../../lib/utils';
 import { FieldRenderer } from '../fields/FieldRenderer';
 import { TipTapEditor } from '../editor/TipTapEditor';
-import { cn } from '../../lib/utils';
 
 export function EntryEditPage() {
   const { collection: collectionName, slug } = useParams<{
@@ -24,12 +24,11 @@ export function EntryEditPage() {
     collectionName || '',
     slug
   );
-  const { blockHmr } = useHmrBlock();
 
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [content, setContent] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const isDraft = formData.draft === true;
 
   // Initialize form data
   useEffect(() => {
@@ -44,6 +43,55 @@ export function EntryEditPage() {
     }
   }, [collection, entry, isNew]);
 
+  // Prepare save data
+  const getSaveData = useCallback(
+    (fieldsOverride?: Record<string, unknown>) => {
+      if (!collection) return { fields: formData, content };
+
+      const markdocField = Object.entries(collection.config.schema).find(
+        ([_, f]) => f.type === 'markdoc'
+      );
+
+      const dataToSave = { ...formData, ...fieldsOverride };
+      if (markdocField) {
+        dataToSave[markdocField[0]] = content;
+      }
+
+      return {
+        fields: dataToSave as Record<string, unknown>,
+        content,
+      };
+    },
+    [collection, formData, content]
+  );
+
+  // Handle save
+  const handleSave = useCallback(
+    async (_data: unknown, options: SaveOptions) => {
+      const saveData = getSaveData(options.fieldsOverride);
+      const result = await save(saveData, { commit: options.commit });
+      if (result && options.fieldsOverride) {
+        setFormData((prev) => ({ ...prev, ...options.fieldsOverride }));
+      }
+      return !!result;
+    },
+    [getSaveData, save]
+  );
+
+  const {
+    isAutoSaving,
+    isSaving,
+    hasUnsavedChanges,
+    lastSavedAt,
+    saveError,
+    markAsChanged,
+    saveWithCommit,
+  } = useAutoSave({
+    data: { formData, content },
+    onSave: handleSave,
+    enabled: !isNew && !!collection,
+  });
+
   if (!collection) {
     return (
       <div className="p-6">
@@ -54,6 +102,7 @@ export function EntryEditPage() {
 
   const handleFieldChange = (fieldName: string, value: unknown) => {
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
+    markAsChanged();
 
     // Auto-generate slug from title
     const slugField = Object.entries(collection.config.schema).find(
@@ -71,37 +120,19 @@ export function EntryEditPage() {
     }
   };
 
-  const handleSave = async () => {
-    setSaveError(null);
-    blockHmr(2000); // Block HMR reload for 2 seconds after save
+  const handleContentChange = (newContent: string) => {
+    setContent(newContent);
+    markAsChanged();
+  };
 
-    // Show loading spinner only if save takes more than 200ms
-    const loadingTimer = setTimeout(() => setIsSaving(true), 200);
-
-    // Find markdoc field
-    const markdocField = Object.entries(collection.config.schema).find(
-      ([_, f]) => f.type === 'markdoc'
-    );
-
-    const dataToSave = { ...formData };
-    if (markdocField) {
-      dataToSave[markdocField[0]] = content;
-    }
-
-    const result = await save({
-      fields: dataToSave as Record<string, unknown>,
-      content,
-    });
-
-    clearTimeout(loadingTimer);
-    setIsSaving(false);
-
-    if (result) {
-      if (isNew) {
-        navigate(`/collections/${collectionName}/${result.slug}`);
+  const handleCommit = async (fieldsOverride?: Record<string, unknown>) => {
+    const success = await saveWithCommit(fieldsOverride);
+    if (success && isNew) {
+      const saveData = getSaveData(fieldsOverride);
+      const slugValue = saveData.fields.slug as string;
+      if (slugValue) {
+        navigate(`/collections/${collectionName}/${slugValue}`);
       }
-    } else {
-      setSaveError('Failed to save entry');
     }
   };
 
@@ -121,9 +152,11 @@ export function EntryEditPage() {
   const markdocField = allFields.find(([_, f]) => f.type === 'markdoc');
   const regularFields = allFields.filter(([_, f]) => f.type !== 'markdoc');
 
+  const isDisabled = isSaving || isAutoSaving;
+
   return (
     <div className="flex flex-col h-full">
-      {/* Header with breadcrumbs */}
+      {/* Header */}
       <header className="flex items-center justify-between px-6 py-3 border-b border-base-300 bg-base-100">
         <div className="breadcrumbs text-sm">
           <ul>
@@ -136,11 +169,14 @@ export function EntryEditPage() {
           </ul>
         </div>
 
-        <div className="flex items-center gap-1">
-          <button
-            className="btn btn-ghost btn-sm btn-square"
-            title="Preview"
-          >
+        <div className="flex items-center gap-2">
+          <SaveStatus
+            isAutoSaving={isAutoSaving}
+            hasUnsavedChanges={hasUnsavedChanges}
+            lastSavedAt={lastSavedAt}
+            isNew={isNew}
+          />
+          <button className="btn btn-ghost btn-sm btn-square" title="Preview">
             <Eye className="w-4 h-4" />
           </button>
           {!isNew && (
@@ -152,23 +188,21 @@ export function EntryEditPage() {
               <Trash2 className="w-4 h-4" />
             </button>
           )}
-          <button
-            className="btn btn-ghost btn-sm btn-square"
-            title="Copy"
-          >
+          <button className="btn btn-ghost btn-sm btn-square" title="Copy">
             <Copy className="w-4 h-4" />
           </button>
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="btn btn-primary btn-sm"
-          >
-            {isSaving ? <span className="loading loading-spinner loading-xs"></span> : 'Save'}
-          </button>
+
+          <PublishButtons
+            isDraft={isDraft}
+            isNew={isNew}
+            isDisabled={isDisabled}
+            isSaving={isSaving}
+            onCommit={handleCommit}
+          />
         </div>
       </header>
 
-      {/* Main content area */}
+      {/* Main content */}
       <div className="flex flex-1 bg-base-100 overflow-hidden">
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
@@ -178,7 +212,7 @@ export function EntryEditPage() {
           <div className="flex-1 p-6 text-error">{error}</div>
         ) : (
           <>
-            {/* Center: Editor */}
+            {/* Editor */}
             <div className="flex-1 overflow-y-auto">
               {saveError && (
                 <div className="alert alert-error mx-6 mt-4">
@@ -186,9 +220,8 @@ export function EntryEditPage() {
                 </div>
               )}
 
-              {/* Content editor */}
               {markdocField ? (
-                <TipTapEditor value={content} onChange={setContent} />
+                <TipTapEditor value={content} onChange={handleContentChange} />
               ) : (
                 <div className="p-6 text-base-content/70 text-center">
                   <p>No content editor configured for this collection.</p>
@@ -196,7 +229,7 @@ export function EntryEditPage() {
               )}
             </div>
 
-            {/* Right sidebar: Metadata fields */}
+            {/* Sidebar */}
             <aside className="w-72 border-l border-base-100 bg-base-200 overflow-y-auto">
               <div className="p-4 space-y-5">
                 {regularFields.map(([name, field]) => (
@@ -206,7 +239,7 @@ export function EntryEditPage() {
                     value={formData[name]}
                     onChange={(value) => handleFieldChange(name, value)}
                     collectionName={collectionName || ''}
-                    slug={slug || formData['slug'] as string || 'new'}
+                    slug={slug || (formData['slug'] as string) || 'new'}
                   />
                 ))}
               </div>
@@ -215,5 +248,122 @@ export function EntryEditPage() {
         )}
       </div>
     </div>
+  );
+}
+
+interface SaveStatusProps {
+  isAutoSaving: boolean;
+  hasUnsavedChanges: boolean;
+  lastSavedAt: Date | null;
+  isNew: boolean;
+}
+
+function SaveStatus({
+  isAutoSaving,
+  hasUnsavedChanges,
+  lastSavedAt,
+  isNew,
+}: SaveStatusProps) {
+  if (isAutoSaving) {
+    return (
+      <span className="text-xs text-base-content/50 flex items-center gap-1">
+        <span className="loading loading-spinner loading-xs"></span>
+        Saving...
+      </span>
+    );
+  }
+
+  if (hasUnsavedChanges && !isNew) {
+    return <span className="text-xs text-warning">Unsaved</span>;
+  }
+
+  if (lastSavedAt && !isNew) {
+    return (
+      <span className="text-xs text-base-content/50">
+        Saved {formatRelativeTime(lastSavedAt)}
+      </span>
+    );
+  }
+
+  return null;
+}
+
+interface PublishButtonsProps {
+  isDraft: boolean;
+  isNew: boolean;
+  isDisabled: boolean;
+  isSaving: boolean;
+  onCommit: (fieldsOverride?: Record<string, unknown>) => void;
+}
+
+function PublishButtons({
+  isDraft,
+  isNew,
+  isDisabled,
+  isSaving,
+  onCommit,
+}: PublishButtonsProps) {
+  const spinner = <span className="loading loading-spinner loading-xs"></span>;
+
+  if (isNew) {
+    return (
+      <>
+        <button
+          onClick={() => onCommit({ draft: true })}
+          disabled={isDisabled}
+          className="btn btn-ghost btn-sm"
+        >
+          {isSaving ? spinner : 'Save Draft'}
+        </button>
+        <button
+          onClick={() => onCommit({ draft: false })}
+          disabled={isDisabled}
+          className="btn btn-primary btn-sm"
+        >
+          {isSaving ? spinner : 'Publish'}
+        </button>
+      </>
+    );
+  }
+
+  if (isDraft) {
+    return (
+      <>
+        <button
+          onClick={() => onCommit()}
+          disabled={isDisabled}
+          className="btn btn-ghost btn-sm"
+        >
+          {isSaving ? spinner : 'Save Draft'}
+        </button>
+        <button
+          onClick={() => onCommit({ draft: false })}
+          disabled={isDisabled}
+          className="btn btn-primary btn-sm"
+        >
+          {isSaving ? spinner : 'Publish'}
+        </button>
+      </>
+    );
+  }
+
+  // Published
+  return (
+    <>
+      <button
+        onClick={() => onCommit({ draft: true })}
+        disabled={isDisabled}
+        className="btn btn-ghost btn-sm"
+      >
+        {isSaving ? spinner : 'Unpublish'}
+      </button>
+      <button
+        onClick={() => onCommit()}
+        disabled={isDisabled}
+        className="btn btn-primary btn-sm"
+      >
+        {isSaving ? spinner : 'Update'}
+      </button>
+    </>
   );
 }

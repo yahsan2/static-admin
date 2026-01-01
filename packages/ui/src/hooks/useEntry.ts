@@ -2,11 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAdmin } from '../context/AdminContext';
 import type { Entry, EntryData, Schema } from '../types';
 
+export interface SaveOptions {
+  commit?: boolean;
+}
+
 export interface UseEntryResult<S extends Schema = Schema> {
   entry: Entry<S> | null;
   isLoading: boolean;
   error: string | null;
-  save: (data: EntryData<S>) => Promise<Entry<S> | null>;
+  save: (data: EntryData<S>, options?: SaveOptions) => Promise<Entry<S> | null>;
   remove: () => Promise<boolean>;
   refetch: () => Promise<void>;
 }
@@ -48,7 +52,7 @@ export function useEntry<S extends Schema = Schema>(
   }, [fetchEntry]);
 
   const save = useCallback(
-    async (data: EntryData<S>): Promise<Entry<S> | null> => {
+    async (data: EntryData<S>, options?: SaveOptions): Promise<Entry<S> | null> => {
       setError(null);
 
       const isCreate = !slug;
@@ -58,7 +62,7 @@ export function useEntry<S extends Schema = Schema>(
 
       const result = await fetchApi<Entry<S>>(endpoint, {
         method: isCreate ? 'POST' : 'PUT',
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, commit: options?.commit }),
       });
 
       if (result.success && result.data) {

@@ -1,5 +1,6 @@
 import {
   ContentManager,
+  GitManager,
   validateEntry,
   getDefaultValues,
   type EntryData,
@@ -167,7 +168,7 @@ export const getEntry: ApiHandler = async (ctx, req) => {
 export const createEntry: ApiHandler = async (ctx, req) => {
   const { config, rootDir } = ctx;
   const { collection: collectionName } = req.params;
-  const body = req.body as { fields?: Record<string, unknown>; content?: string };
+  const body = req.body as { fields?: Record<string, unknown>; content?: string; commit?: boolean };
 
   const collection = config.collections?.[collectionName];
   if (!collection) {
@@ -199,6 +200,14 @@ export const createEntry: ApiHandler = async (ctx, req) => {
       content: body.content,
     });
 
+    // Commit if requested
+    if (body.commit) {
+      const gitManager = new GitManager({ rootDir, config: config.git });
+      const filePath = contentManager.getEntryPath(collectionName, entry.slug);
+      await gitManager.add(filePath);
+      await gitManager.commit(`create: ${collectionName}/${entry.slug}`);
+    }
+
     return { success: true, data: entry };
   } catch (error) {
     return {
@@ -214,7 +223,7 @@ export const createEntry: ApiHandler = async (ctx, req) => {
 export const updateEntry: ApiHandler = async (ctx, req) => {
   const { config, rootDir } = ctx;
   const { collection: collectionName, slug } = req.params;
-  const body = req.body as { fields?: Record<string, unknown>; content?: string };
+  const body = req.body as { fields?: Record<string, unknown>; content?: string; commit?: boolean };
 
   const collection = config.collections?.[collectionName];
   if (!collection) {
@@ -251,6 +260,14 @@ export const updateEntry: ApiHandler = async (ctx, req) => {
       fields: fields as EntryData<Schema>['fields'],
       content,
     });
+
+    // Commit if requested
+    if (body.commit) {
+      const gitManager = new GitManager({ rootDir, config: config.git });
+      const filePath = contentManager.getEntryPath(collectionName, slug);
+      await gitManager.add(filePath);
+      await gitManager.commit(`update: ${collectionName}/${slug}`);
+    }
 
     return { success: true, data: entry };
   } catch (error) {
