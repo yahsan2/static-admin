@@ -33,8 +33,8 @@ export const config = defineConfig({
           label: 'Slug',
           from: 'title',
         }),
-        date: fields.date({
-          label: 'Publish Date',
+        date: fields.datetime({
+          label: 'Publish Datetime',
           defaultValue: 'now',
         }),
         draft: fields.checkbox({

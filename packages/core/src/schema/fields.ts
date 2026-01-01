@@ -3,6 +3,7 @@ import type {
   SlugField,
   TextareaField,
   DateField,
+  DatetimeField,
   CheckboxField,
   SelectField,
   SelectOption,
@@ -44,6 +45,13 @@ export const fields = {
    */
   date(config: Omit<DateField, 'type'>): DateField {
     return { type: 'date', ...config };
+  },
+
+  /**
+   * Datetime field (date + time)
+   */
+  datetime(config: Omit<DatetimeField, 'type'>): DatetimeField {
+    return { type: 'datetime', ...config };
   },
 
   /**

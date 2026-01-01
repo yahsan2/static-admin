@@ -26,6 +26,14 @@ export function getDefaultValues<S extends Schema>(
           defaults[key] = field.defaultValue ?? '';
         }
         break;
+      case 'datetime':
+        if (field.defaultValue === 'now') {
+          // Format: YYYY-MM-DDTHH:MM (for datetime-local input)
+          defaults[key] = new Date().toISOString().slice(0, 16);
+        } else {
+          defaults[key] = field.defaultValue ?? '';
+        }
+        break;
       case 'checkbox':
         defaults[key] = field.defaultValue ?? false;
         break;

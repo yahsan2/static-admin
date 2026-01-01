@@ -26,6 +26,7 @@ export type {
   SlugField,
   TextareaField,
   DateField,
+  DatetimeField,
   CheckboxField,
   SelectField,
   RelationField,

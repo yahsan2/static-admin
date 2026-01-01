@@ -41,6 +41,12 @@ export interface DateField extends BaseFieldConfig {
   defaultValue?: string | 'now';
 }
 
+/** Datetime field */
+export interface DatetimeField extends BaseFieldConfig {
+  type: 'datetime';
+  defaultValue?: string | 'now';
+}
+
 /** Checkbox field */
 export interface CheckboxField extends BaseFieldConfig {
   type: 'checkbox';
@@ -97,6 +103,7 @@ export type Field =
   | SlugField
   | TextareaField
   | DateField
+  | DatetimeField
   | CheckboxField
   | SelectField
   | RelationField
@@ -119,23 +126,25 @@ export type InferFieldType<F extends Field> = F extends TextField
       ? string
       : F extends DateField
         ? string
-        : F extends CheckboxField
-          ? boolean
-          : F extends SelectField
-            ? F['multiple'] extends true
-              ? string[]
-              : string
-            : F extends RelationField
+        : F extends DatetimeField
+          ? string
+          : F extends CheckboxField
+            ? boolean
+            : F extends SelectField
               ? F['multiple'] extends true
                 ? string[]
                 : string
-              : F extends ImageField
-                ? string | null
-                : F extends ArrayField
-                  ? InferFieldType<F['itemField']>[]
-                  : F extends MarkdocField
-                    ? string
-                    : never;
+              : F extends RelationField
+                ? F['multiple'] extends true
+                  ? string[]
+                  : string
+                : F extends ImageField
+                  ? string | null
+                  : F extends ArrayField
+                    ? InferFieldType<F['itemField']>[]
+                    : F extends MarkdocField
+                      ? string
+                      : never;
 
 /** Infer TypeScript type from schema */
 export type InferSchemaType<S extends Schema> = {

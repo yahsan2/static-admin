@@ -4,6 +4,7 @@ import { TextField } from './TextField';
 import { SlugField } from './SlugField';
 import { TextareaField } from './TextareaField';
 import { DateField } from './DateField';
+import { DatetimeField } from './DatetimeField';
 import { CheckboxField } from './CheckboxField';
 import { SelectField } from './SelectField';
 import { RelationField } from './RelationField';
@@ -66,6 +67,17 @@ export function FieldRenderer({
     case 'date':
       return (
         <DateField
+          field={field}
+          value={(value as string) || ''}
+          onChange={onChange as (v: string) => void}
+          error={error}
+          className={className}
+        />
+      );
+
+    case 'datetime':
+      return (
+        <DatetimeField
           field={field}
           value={(value as string) || ''}
           onChange={onChange as (v: string) => void}

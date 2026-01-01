@@ -5,6 +5,7 @@ import type {
   SlugField,
   TextareaField,
   DateField,
+  DatetimeField,
   CheckboxField,
   SelectField,
   RelationField,
@@ -64,6 +65,18 @@ function createFieldSchema(field: Field): ZodType {
           return !isNaN(date.getTime());
         },
         { message: 'Invalid date format' }
+      );
+      break;
+    }
+
+    case 'datetime': {
+      schema = z.string().refine(
+        (val) => {
+          if (!val) return true;
+          const date = new Date(val);
+          return !isNaN(date.getTime());
+        },
+        { message: 'Invalid datetime format' }
       );
       break;
     }
@@ -184,6 +197,14 @@ export function getDefaultValues<S extends Schema>(
       case 'date':
         if (field.defaultValue === 'now') {
           defaults[key] = new Date().toISOString().split('T')[0];
+        } else {
+          defaults[key] = field.defaultValue ?? '';
+        }
+        break;
+      case 'datetime':
+        if (field.defaultValue === 'now') {
+          // Format: YYYY-MM-DDTHH:MM (for datetime-local input)
+          defaults[key] = new Date().toISOString().slice(0, 16);
         } else {
           defaults[key] = field.defaultValue ?? '';
         }

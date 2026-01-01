@@ -10,6 +10,9 @@ export type { TextareaFieldProps } from './TextareaField';
 export { DateField } from './DateField';
 export type { DateFieldProps } from './DateField';
 
+export { DatetimeField } from './DatetimeField';
+export type { DatetimeFieldProps } from './DatetimeField';
+
 export { CheckboxField } from './CheckboxField';
 export type { CheckboxFieldProps } from './CheckboxField';
 

@@ -25,6 +25,7 @@ export { TextField } from './components/fields/TextField';
 export { SlugField } from './components/fields/SlugField';
 export { TextareaField } from './components/fields/TextareaField';
 export { DateField } from './components/fields/DateField';
+export { DatetimeField } from './components/fields/DatetimeField';
 export { CheckboxField } from './components/fields/CheckboxField';
 export { SelectField } from './components/fields/SelectField';
 export { RelationField } from './components/fields/RelationField';

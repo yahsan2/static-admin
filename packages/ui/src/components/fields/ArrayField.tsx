@@ -102,6 +102,7 @@ function getDefaultValue(field: Field): unknown {
     case 'markdoc':
       return '';
     case 'date':
+    case 'datetime':
       return '';
     case 'checkbox':
       return false;
