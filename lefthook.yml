@@ -1,0 +1,20 @@
+pre-commit:
+  parallel: true
+  commands:
+    format:
+      glob: "*.{ts,tsx,json}"
+      run: pnpm oxlint --fix {staged_files}
+      stage_fixed: true
+
+    typecheck:
+      glob: "*.{ts,tsx}"
+      run: pnpm turbo lint
+
+    git-secrets:
+      run: git secrets --scan
+
+pre-push:
+  commands:
+    test:
+      glob: "*.test.{ts,tsx}"
+      run: pnpm test
