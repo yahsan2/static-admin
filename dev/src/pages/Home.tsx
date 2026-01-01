@@ -5,7 +5,7 @@ import { createClient, type CollectionEntry } from '@static-admin/client';
 type PostEntry = CollectionEntry<'posts'>;
 
 const client = createClient({
-  baseUrl: '/public',
+  baseUrl: '/api/public',
 });
 
 export function Home() {

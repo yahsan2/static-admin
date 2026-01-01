@@ -1,0 +1,22 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd .. && pnpm install && pnpm --filter @static-admin/core build && pnpm --filter @static-admin/api build && pnpm --filter @static-admin/hono build && pnpm --filter @static-admin/ui build && cd dev && pnpm build",
+  "outputDirectory": "dist",
+  "installCommand": "echo 'skip'",
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api"
+    }
+  ],
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}
