@@ -191,7 +191,7 @@ export function EntryEditPage() {
             </div>
 
             {/* Right sidebar: Metadata fields */}
-            <aside className="w-72 border-l border-base-100 bg-base-50 overflow-y-auto">
+            <aside className="w-72 border-l border-base-100 bg-base-200 overflow-y-auto">
               <div className="p-4 space-y-5">
                 {regularFields.map(([name, field]) => (
                   <FieldRenderer
