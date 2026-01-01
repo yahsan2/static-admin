@@ -2,7 +2,7 @@
 title: Sample Post 14
 slug: sample-post-14
 date: '2025-02-14'
-draft: false
+draft: true
 category: life
 tags:
   - sample
