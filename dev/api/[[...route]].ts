@@ -47,6 +47,9 @@ async function initAdmin() {
   }
 }
 
+// Debug route
+app.get('/debug', (c) => c.json({ routes: 'admin/*, public/*' }));
+
 // Admin routes
 app.all('/admin/*', async (c) => {
   try {
