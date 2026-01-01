@@ -115,6 +115,7 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
   // Initialize auth if configured
   let auth: ReturnType<typeof createAuthManager> | null = null;
   let mail: MailService | null = null;
+  let authInitPromise: Promise<void> | null = null;
 
   if (config.auth) {
     auth = createAuthManager({
@@ -122,12 +123,24 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
       remote: config.auth.remote,
       sessionExpiry: config.auth.sessionExpiry,
     });
-    auth.initialize().catch(console.error);
+    // Store the promise so we can await it before handling requests
+    authInitPromise = auth.initialize().catch((e) => {
+      console.error('Auth initialization failed:', e);
+    });
 
     // Initialize mail service for password reset
     createMailService().then((m) => {
       mail = m;
     }).catch(console.error);
+  }
+
+  /**
+   * Ensure auth is initialized before handling requests
+   */
+  async function ensureAuthInitialized(): Promise<void> {
+    if (authInitPromise) {
+      await authInitPromise;
+    }
   }
 
   /**
@@ -153,6 +166,12 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
   function createAdminApi(): Hono<{ Variables: AuthVariables }> {
     const app = new Hono<{ Variables: AuthVariables }>();
     const handlers = createApiHandlers();
+
+    // Ensure auth is initialized before any request
+    app.use('*', async (_, next) => {
+      await ensureAuthInitialized();
+      await next();
+    });
 
     // Add auth middleware if configured
     if (auth) {
