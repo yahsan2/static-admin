@@ -48,13 +48,14 @@ export function EntryEditPage() {
     (fieldsOverride?: Record<string, unknown>) => {
       if (!collection) return { fields: formData, content };
 
-      const markdocField = Object.entries(collection.config.schema).find(
+      const markdocFieldName = Object.entries(collection.config.schema).find(
         ([_, f]) => f.type === 'markdoc'
-      );
+      )?.[0];
 
+      // Exclude markdoc field from frontmatter (it goes in content body)
       const dataToSave = { ...formData, ...fieldsOverride };
-      if (markdocField) {
-        dataToSave[markdocField[0]] = content;
+      if (markdocFieldName && markdocFieldName in dataToSave) {
+        delete dataToSave[markdocFieldName];
       }
 
       return {
