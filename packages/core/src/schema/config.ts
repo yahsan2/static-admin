@@ -35,10 +35,14 @@ import type { StaticAdminConfig } from '../types/config';
  */
 export function defineConfig<T extends StaticAdminConfig>(config: T): T {
   // Validate and set defaults
+  // Preserve full storage config (including kind, owner, repo, etc. for GitHub mode)
+  const storageConfig = {
+    ...config.storage,
+    contentPath: config.storage.contentPath || 'content',
+  };
+
   const finalConfig: StaticAdminConfig = {
-    storage: {
-      contentPath: config.storage.contentPath || 'content',
-    },
+    storage: storageConfig,
     git: config.git
       ? {
           autoCommit: config.git.autoCommit ?? false,
