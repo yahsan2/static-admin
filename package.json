@@ -6,15 +6,20 @@
   "scripts": {
     "build": "turbo build",
     "dev": "pnpm --filter static-admin-dev dev",
+    "test": "turbo test",
+    "test:watch": "vitest --workspace",
+    "test:coverage": "turbo test:coverage",
     "lint": "turbo lint",
     "format": "oxlint --fix .",
     "clean": "turbo clean && rm -rf node_modules"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "@vitest/coverage-v8": "^4.0.16",
     "oxlint": "^0.16.0",
     "turbo": "^2.3.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.16"
   },
   "packageManager": "pnpm@9.15.0",
   "engines": {
