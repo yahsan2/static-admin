@@ -49,7 +49,6 @@ export function useEntry<S extends Schema = Schema>(
 
   const save = useCallback(
     async (data: EntryData<S>): Promise<Entry<S> | null> => {
-      setIsLoading(true);
       setError(null);
 
       const isCreate = !slug;
@@ -61,8 +60,6 @@ export function useEntry<S extends Schema = Schema>(
         method: isCreate ? 'POST' : 'PUT',
         body: JSON.stringify(data),
       });
-
-      setIsLoading(false);
 
       if (result.success && result.data) {
         setEntry(result.data);
