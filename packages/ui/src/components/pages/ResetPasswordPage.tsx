@@ -53,19 +53,18 @@ export function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-          <h1 className="text-2xl font-bold text-center mb-6 text-red-600">無効なリンク</h1>
-          <p className="text-gray-600 text-center mb-6">
-            パスワードリセットのリンクが無効です。
-            もう一度リセットをリクエストしてください。
-          </p>
-          <Link
-            to="/forgot-password"
-            className="block w-full text-center py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            パスワードリセットをリクエスト
-          </Link>
+      <div className="min-h-screen flex items-center justify-center bg-base-200">
+        <div className="card bg-base-100 shadow-md w-full max-w-md">
+          <div className="card-body">
+            <h1 className="text-2xl font-bold text-center mb-4 text-error">無効なリンク</h1>
+            <p className="text-base-content/70 text-center mb-4">
+              パスワードリセットのリンクが無効です。
+              もう一度リセットをリクエストしてください。
+            </p>
+            <Link to="/forgot-password" className="btn btn-primary w-full">
+              パスワードリセットをリクエスト
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -73,78 +72,75 @@ export function ResetPasswordPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-          <h1 className="text-2xl font-bold text-center mb-6 text-green-600">パスワードを変更しました</h1>
-          <p className="text-gray-600 text-center mb-6">
-            パスワードが正常に変更されました。
-            3秒後にログインページに移動します...
-          </p>
-          <Link
-            to="/login"
-            className="block w-full text-center py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            今すぐログイン
-          </Link>
+      <div className="min-h-screen flex items-center justify-center bg-base-200">
+        <div className="card bg-base-100 shadow-md w-full max-w-md">
+          <div className="card-body">
+            <h1 className="text-2xl font-bold text-center mb-4 text-success">パスワードを変更しました</h1>
+            <p className="text-base-content/70 text-center mb-4">
+              パスワードが正常に変更されました。
+              3秒後にログインページに移動します...
+            </p>
+            <Link to="/login" className="btn btn-primary w-full">
+              今すぐログイン
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-2xl font-bold text-center mb-2">新しいパスワードを設定</h1>
-        <p className="text-gray-600 text-center mb-6">
-          新しいパスワードを入力してください。
-        </p>
+    <div className="min-h-screen flex items-center justify-center bg-base-200">
+      <div className="card bg-base-100 shadow-md w-full max-w-md">
+        <div className="card-body">
+          <h1 className="text-2xl font-bold text-center mb-2">新しいパスワードを設定</h1>
+          <p className="text-base-content/70 text-center mb-4">
+            新しいパスワードを入力してください。
+          </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              新しいパスワード
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="8文字以上"
-            />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <fieldset className="fieldset">
+              <legend className="fieldset-legend">新しいパスワード</legend>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                className="input input-bordered w-full"
+                placeholder="8文字以上"
+              />
+            </fieldset>
+
+            <fieldset className="fieldset">
+              <legend className="fieldset-legend">パスワード(確認)</legend>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={8}
+                className="input input-bordered w-full"
+                placeholder="もう一度入力"
+              />
+            </fieldset>
+
+            {error && <p className="text-error text-sm">{error}</p>}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="btn btn-primary w-full"
+            >
+              {isLoading ? <span className="loading loading-spinner loading-sm"></span> : 'パスワードを変更'}
+            </button>
+          </form>
+
+          <div className="mt-4 text-center">
+            <Link to="/login" className="link link-primary text-sm">
+              ログインに戻る
+            </Link>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              パスワード(確認)
-            </label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              minLength={8}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="もう一度入力"
-            />
-          </div>
-
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? '変更中...' : 'パスワードを変更'}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <Link to="/login" className="text-sm text-blue-600 hover:underline">
-            ログインに戻る
-          </Link>
         </div>
       </div>
     </div>

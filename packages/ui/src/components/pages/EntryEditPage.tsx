@@ -45,7 +45,7 @@ export function EntryEditPage() {
   if (!collection) {
     return (
       <div className="p-6">
-        <p className="text-red-500">Collection not found</p>
+        <p className="text-error">Collection not found</p>
       </div>
     );
   }
@@ -118,23 +118,21 @@ export function EntryEditPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header with breadcrumbs */}
-      <header className="flex items-center justify-between px-6 py-3 border-b border-gray-200 bg-white">
-        <nav className="flex items-center gap-2 text-sm">
-          <Link
-            to={`/collections/${collectionName}`}
-            className="text-gray-600 hover:text-gray-900 font-medium"
-          >
-            {collection.config.label}
-          </Link>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-900 font-medium">
-            {isNew ? 'New' : entry?.slug || ''}
-          </span>
-        </nav>
+      <header className="flex items-center justify-between px-6 py-3 border-b border-base-300 bg-base-100">
+        <div className="breadcrumbs text-sm">
+          <ul>
+            <li>
+              <Link to={`/collections/${collectionName}`}>
+                {collection.config.label}
+              </Link>
+            </li>
+            <li>{isNew ? 'New' : entry?.slug || ''}</li>
+          </ul>
+        </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <button
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+            className="btn btn-ghost btn-sm btn-square"
             title="Preview"
           >
             <Eye className="w-4 h-4" />
@@ -142,14 +140,14 @@ export function EntryEditPage() {
           {!isNew && (
             <button
               onClick={handleDelete}
-              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+              className="btn btn-ghost btn-sm btn-square hover:text-error"
               title="Delete"
             >
               <Trash2 className="w-4 h-4" />
             </button>
           )}
           <button
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+            className="btn btn-ghost btn-sm btn-square"
             title="Copy"
           >
             <Copy className="w-4 h-4" />
@@ -157,9 +155,9 @@ export function EntryEditPage() {
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="btn btn-primary btn-sm"
           >
-            {isSaving ? 'Saving...' : 'Save'}
+            {isSaving ? <span className="loading loading-spinner loading-xs"></span> : 'Save'}
           </button>
         </div>
       </header>
@@ -168,17 +166,17 @@ export function EntryEditPage() {
       <div className="flex flex-1 overflow-hidden">
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
+            <span className="loading loading-spinner loading-md"></span>
           </div>
         ) : error ? (
-          <div className="flex-1 p-6 text-red-500">{error}</div>
+          <div className="flex-1 p-6 text-error">{error}</div>
         ) : (
           <>
             {/* Center: Editor */}
             <div className="flex-1 overflow-y-auto">
               {saveError && (
-                <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
-                  {saveError}
+                <div className="alert alert-error mx-6 mt-4">
+                  <span>{saveError}</span>
                 </div>
               )}
 
@@ -186,14 +184,14 @@ export function EntryEditPage() {
               {markdocField ? (
                 <TipTapEditor value={content} onChange={setContent} />
               ) : (
-                <div className="p-6 text-gray-500 text-center">
+                <div className="p-6 text-base-content/70 text-center">
                   <p>No content editor configured for this collection.</p>
                 </div>
               )}
             </div>
 
             {/* Right sidebar: Metadata fields */}
-            <aside className="w-72 border-l border-gray-200 bg-gray-50/50 overflow-y-auto">
+            <aside className="w-72 border-l border-base-100 bg-base-50 overflow-y-auto">
               <div className="p-4 space-y-5">
                 {regularFields.map(([name, field]) => (
                   <FieldRenderer

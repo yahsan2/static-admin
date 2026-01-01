@@ -19,7 +19,7 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'flex flex-col w-56 border-r border-gray-200 bg-white',
+        'flex flex-col w-64 min-h-full border-r border-base-300 bg-base-100',
         className
       )}
     >
@@ -29,14 +29,14 @@ export function Sidebar({ className }: SidebarProps) {
           <div className="w-6 h-6 bg-gradient-to-br from-violet-500 to-purple-600 rounded flex items-center justify-center">
             <span className="text-white text-xs font-bold">S</span>
           </div>
-          <span className="font-semibold text-gray-900">Static Admin</span>
+          <span className="font-semibold">Static Admin</span>
         </div>
         {config.publicSiteUrl && (
           <a
             href={config.publicSiteUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100"
+            className="btn btn-ghost btn-sm btn-square"
             title="View published site"
           >
             <ExternalLink className="w-4 h-4" />
@@ -45,74 +45,62 @@ export function Sidebar({ className }: SidebarProps) {
       </div>
 
       {/* Dashboard link */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
-        <Link
-          to="/"
-          className={cn(
-            'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors mb-4',
-            location.pathname === '/'
-              ? 'text-gray-900 bg-gray-100'
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-          )}
-        >
-          Dashboard
-        </Link>
+      <nav className="flex-1 overflow-y-auto px-2 py-4">
+        <ul className="menu menu-sm">
+          <li>
+            <Link
+              to="/"
+              className={location.pathname === '/' ? 'active' : ''}
+            >
+              Dashboard
+            </Link>
+          </li>
+        </ul>
 
         {/* Collections */}
-        <div className="space-y-1">
-          <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-            Collections
-          </p>
+        <ul className="menu menu-sm mt-4">
+          <li className="menu-title">Collections</li>
           {collections.map((col) => (
-            <Link
-              key={col.name}
-              to={`/collections/${col.name}`}
-              className={cn(
-                'flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors',
-                isActive(`/collections/${col.name}`)
-                  ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-600 -ml-0.5 pl-[calc(0.75rem+2px)]'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              )}
-            >
-              <FileText className="w-4 h-4" />
-              {col.label}
-            </Link>
+            <li key={col.name}>
+              <Link
+                to={`/collections/${col.name}`}
+                className={isActive(`/collections/${col.name}`) ? 'active' : ''}
+              >
+                <FileText className="w-4 h-4" />
+                {col.label}
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
 
         {/* Settings - Only show for admin users */}
         {config.auth && user?.role === 'admin' && (
-          <div className="space-y-1 mt-6">
-            <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-              Settings
-            </p>
-            <Link
-              to="/users"
-              className={cn(
-                'flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors',
-                isActive('/users')
-                  ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-600 -ml-0.5 pl-[calc(0.75rem+2px)]'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              )}
-            >
-              <Users className="w-4 h-4" />
-              Users
-            </Link>
-          </div>
+          <ul className="menu menu-sm mt-4">
+            <li className="menu-title">Settings</li>
+            <li>
+              <Link
+                to="/users"
+                className={isActive('/users') ? 'active' : ''}
+              >
+                <Users className="w-4 h-4" />
+                Users
+              </Link>
+            </li>
+          </ul>
         )}
       </nav>
 
       {/* User section */}
       {config.auth && user && (
-        <div className="px-3 py-4 border-t border-gray-200">
+        <div className="px-3 py-4 border-t border-base-300">
           <div className="flex items-center justify-between">
             <div className="text-sm">
-              <p className="font-medium text-gray-900">{user.name || user.email}</p>
-              <p className="text-gray-500 text-xs">{user.email}</p>
+              <p className="font-medium">{user.name || user.email}</p>
+              <p className="text-base-content/50 text-xs">{user.email}</p>
             </div>
             <button
               onClick={logout}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+              className="btn btn-ghost btn-sm btn-square"
               title="Logout"
             >
               <LogOut className="w-4 h-4" />

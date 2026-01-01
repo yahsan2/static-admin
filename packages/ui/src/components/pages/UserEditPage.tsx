@@ -115,25 +115,19 @@ export function UserEditPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header with breadcrumbs */}
-      <header className="flex items-center justify-between px-6 py-3 border-b border-gray-200 bg-white">
-        <nav className="flex items-center gap-2 text-sm">
-          <Link
-            to="/users"
-            className="text-gray-600 hover:text-gray-900 font-medium"
-          >
-            Users
-          </Link>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-900 font-medium">
-            {isNew ? 'New User' : user?.email || ''}
-          </span>
-        </nav>
+      <header className="flex items-center justify-between px-6 py-3 border-b border-base-300 bg-base-100">
+        <div className="breadcrumbs text-sm">
+          <ul>
+            <li><Link to="/users">Users</Link></li>
+            <li>{isNew ? 'New User' : user?.email || ''}</li>
+          </ul>
+        </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {!isNew && currentUser?.id !== Number(id) && (
             <button
               onClick={handleDelete}
-              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+              className="btn btn-ghost btn-sm btn-square hover:text-error"
               title="Delete"
             >
               <Trash2 className="w-4 h-4" />
@@ -142,9 +136,9 @@ export function UserEditPage() {
           <button
             onClick={handleSubmit}
             disabled={isSaving}
-            className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="btn btn-primary btn-sm"
           >
-            {isSaving ? 'Saving...' : 'Save'}
+            {isSaving ? <span className="loading loading-spinner loading-xs"></span> : 'Save'}
           </button>
         </div>
       </header>
@@ -153,23 +147,23 @@ export function UserEditPage() {
       <div className="flex-1 overflow-y-auto p-6">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
+            <span className="loading loading-spinner loading-md"></span>
           </div>
         ) : error ? (
-          <div className="text-red-500">{error}</div>
+          <div className="text-error">{error}</div>
         ) : (
           <form onSubmit={handleSubmit} className="max-w-lg space-y-6">
             {saveError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
-                {saveError}
+              <div className="alert alert-error">
+                <span>{saveError}</span>
               </div>
             )}
 
             {/* Email field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email <span className="text-red-500">*</span>
-              </label>
+            <fieldset className="fieldset">
+              <legend className="fieldset-legend">
+                Email <span className="text-error">*</span>
+              </legend>
               <input
                 type="email"
                 value={formData.email}
@@ -177,60 +171,58 @@ export function UserEditPage() {
                   setFormData({ ...formData, email: e.target.value })
                 }
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="input input-bordered w-full"
               />
-            </div>
+            </fieldset>
 
             {/* Name field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name
-              </label>
+            <fieldset className="fieldset">
+              <legend className="fieldset-legend">Name</legend>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="input input-bordered w-full"
               />
-            </div>
+            </fieldset>
 
             {/* Role field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Role <span className="text-red-500">*</span>
-              </label>
+            <fieldset className="fieldset">
+              <legend className="fieldset-legend">
+                Role <span className="text-error">*</span>
+              </legend>
               <select
                 value={formData.role}
                 onChange={(e) =>
                   setFormData({ ...formData, role: e.target.value as UserRole })
                 }
                 disabled={isLastAdmin}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="select select-bordered w-full"
               >
                 <option value="editor">Editor</option>
                 <option value="admin">Admin</option>
               </select>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-base-content/70 mt-1">
                 {isLastAdmin
                   ? 'Cannot change role: This is the last admin user.'
                   : 'Admins can manage users. Editors can only manage content.'}
               </p>
-            </div>
+            </fieldset>
 
             {/* Password section - only for new users */}
             {isNew && (
-              <div className="border-t pt-6">
-                <h3 className="text-sm font-medium text-gray-900 mb-4">
+              <div className="border-t border-base-300 pt-6">
+                <h3 className="text-sm font-medium mb-4">
                   Set Password
                 </h3>
 
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Password <span className="text-red-500">*</span>
-                    </label>
+                  <fieldset className="fieldset">
+                    <legend className="fieldset-legend">
+                      Password <span className="text-error">*</span>
+                    </legend>
                     <input
                       type="password"
                       value={formData.password}
@@ -238,14 +230,14 @@ export function UserEditPage() {
                         setFormData({ ...formData, password: e.target.value })
                       }
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="input input-bordered w-full"
                     />
-                  </div>
+                  </fieldset>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Confirm Password <span className="text-red-500">*</span>
-                    </label>
+                  <fieldset className="fieldset">
+                    <legend className="fieldset-legend">
+                      Confirm Password <span className="text-error">*</span>
+                    </legend>
                     <input
                       type="password"
                       value={formData.confirmPassword}
@@ -253,17 +245,17 @@ export function UserEditPage() {
                         setFormData({ ...formData, confirmPassword: e.target.value })
                       }
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="input input-bordered w-full"
                     />
-                  </div>
+                  </fieldset>
                 </div>
               </div>
             )}
 
             {/* Password reset info - only for existing users */}
             {!isNew && (
-              <div className="border-t pt-6">
-                <p className="text-sm text-gray-500">
+              <div className="border-t border-base-300 pt-6">
+                <p className="text-sm text-base-content/70">
                   パスワードを変更するには、ログイン画面の「パスワードをお忘れですか?」からリセットしてください。
                 </p>
               </div>

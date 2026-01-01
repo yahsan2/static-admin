@@ -25,7 +25,7 @@ export function EntryListPage() {
   if (!collection) {
     return (
       <div className="p-6">
-        <p className="text-red-500">Collection not found</p>
+        <p className="text-error">Collection not found</p>
       </div>
     );
   }
@@ -61,7 +61,7 @@ export function EntryListPage() {
         actions={
           <Link
             to={`/collections/${collectionName}/new`}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            className="btn btn-primary btn-sm gap-2"
           >
             <Plus className="w-4 h-4" />
             New Entry
@@ -72,8 +72,8 @@ export function EntryListPage() {
       <div className="p-6">
         {/* Search */}
         <div className="mb-4">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <label className="input input-bordered flex items-center gap-2 max-w-md">
+            <Search className="w-4 h-4 text-base-content/50" />
             <input
               type="text"
               value={search}
@@ -82,121 +82,112 @@ export function EntryListPage() {
                 setPage(1);
               }}
               placeholder="Search entries..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="grow"
             />
-          </div>
+          </label>
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="card bg-base-100 border border-base-300 overflow-hidden">
           {isLoading ? (
             <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mx-auto" />
+              <span className="loading loading-spinner loading-md"></span>
             </div>
           ) : error ? (
-            <div className="p-8 text-center text-red-500">{error}</div>
+            <div className="p-8 text-center text-error">{error}</div>
           ) : entries.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-base-content/70">
               No entries found.{' '}
               <Link
                 to={`/collections/${collectionName}/new`}
-                className="text-blue-600 hover:underline"
+                className="link link-primary"
               >
                 Create one
               </Link>
             </div>
           ) : (
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    Slug
-                  </th>
-                  {displayFields.map(([name, field]) => (
-                    <th
-                      key={name}
-                      className="px-4 py-3 text-left text-sm font-medium text-gray-500"
-                    >
-                      {field.label}
-                    </th>
-                  ))}
-                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {entries.map((entry) => (
-                  <tr
-                    key={entry.slug}
-                    className="hover:bg-gray-50 cursor-pointer"
-                    onClick={() =>
-                      navigate(`/collections/${collectionName}/${entry.slug}`)
-                    }
-                  >
-                    <td className="px-4 py-3 text-sm font-mono text-gray-900">
-                      {entry.slug}
-                    </td>
-                    {displayFields.map(([name]) => (
-                      <td key={name} className="px-4 py-3 text-sm text-gray-600">
-                        {String(
-                          entry.data.fields[name as keyof typeof entry.data.fields] ||
-                            ''
-                        )}
-                      </td>
+            <div className="overflow-x-auto">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Slug</th>
+                    {displayFields.map(([name, field]) => (
+                      <th key={name}>{field.label}</th>
                     ))}
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(
-                              `/collections/${collectionName}/${entry.slug}`
-                            );
-                          }}
-                          className="p-1 text-gray-400 hover:text-blue-600"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(entry.slug);
-                          }}
-                          className="p-1 text-gray-400 hover:text-red-600"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+                    <th className="text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {entries.map((entry) => (
+                    <tr
+                      key={entry.slug}
+                      className="hover cursor-pointer"
+                      onClick={() =>
+                        navigate(`/collections/${collectionName}/${entry.slug}`)
+                      }
+                    >
+                      <td className="font-mono">{entry.slug}</td>
+                      {displayFields.map(([name]) => (
+                        <td key={name}>
+                          {String(
+                            entry.data.fields[name as keyof typeof entry.data.fields] ||
+                              ''
+                          )}
+                        </td>
+                      ))}
+                      <td className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(
+                                `/collections/${collectionName}/${entry.slug}`
+                              );
+                            }}
+                            className="btn btn-ghost btn-sm btn-square"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(entry.slug);
+                            }}
+                            className="btn btn-ghost btn-sm btn-square hover:text-error"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
           <div className="mt-4 flex items-center justify-between">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-base-content/70">
               Showing {(page - 1) * pagination.limit + 1} -{' '}
               {Math.min(page * pagination.limit, total)} of {total} entries
             </p>
-            <div className="flex gap-2">
+            <div className="join">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50"
+                className="join-item btn btn-sm"
               >
                 Previous
               </button>
               <button
                 onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
                 disabled={page === pagination.totalPages}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50"
+                className="join-item btn btn-sm"
               >
                 Next
               </button>

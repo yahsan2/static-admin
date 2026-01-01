@@ -17,31 +17,24 @@ export interface HeaderProps {
 
 export function Header({ title, breadcrumbs, actions, className }: HeaderProps) {
   return (
-    <header className={cn('bg-white border-b border-gray-200 px-6 py-4', className)}>
-      {/* Breadcrumbs */}
-      {breadcrumbs && breadcrumbs.length > 0 && (
-        <nav className="flex items-center gap-1 text-sm text-gray-500 mb-2">
-          {breadcrumbs.map((item, index) => (
-            <React.Fragment key={index}>
-              {index > 0 && <ChevronRight className="w-4 h-4" />}
-              {item.href ? (
-                <Link
-                  to={item.href}
-                  className="hover:text-gray-900 transition-colors"
-                >
-                  {item.label}
-                </Link>
-              ) : (
-                <span className="text-gray-900">{item.label}</span>
-              )}
-            </React.Fragment>
-          ))}
-        </nav>
-      )}
-
-      {/* Title and actions */}
+    <header className={cn('bg-base-100 border-b border-base-300 px-6 py-4', className)}>
+      {/* Title and Breadcrumbs */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+        {breadcrumbs && breadcrumbs.length > 0 && (
+          <div className="breadcrumbs text-sm">
+            <ul>
+              {breadcrumbs.map((item, index) => (
+                <li key={index}>
+                  {item.href ? (
+                    <Link to={item.href}>{item.label}</Link>
+                  ) : (
+                    <span className="font-bold">{item.label}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
     </header>

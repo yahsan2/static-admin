@@ -25,11 +25,13 @@ export function StaticAdminApp({
   apiBasePath = '/admin/api',
 }: StaticAdminAppProps) {
   return (
-    <AdminProvider config={config} apiBasePath={apiBasePath}>
-      <BrowserRouter basename={basePath}>
-        <AppRoutes />
-      </BrowserRouter>
-    </AdminProvider>
+    <div data-theme="corporate" className="min-h-screen">
+      <AdminProvider config={config} apiBasePath={apiBasePath}>
+        <BrowserRouter basename={basePath}>
+          <AppRoutes />
+        </BrowserRouter>
+      </AdminProvider>
+    </div>
   );
 }
 
@@ -40,7 +42,7 @@ function AppRoutes() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+        <span className="loading loading-spinner loading-lg"></span>
       </div>
     );
   }

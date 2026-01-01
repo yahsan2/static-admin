@@ -42,22 +42,22 @@ export function ArrayField({
   };
 
   return (
-    <div className={cn('space-y-2', className)}>
-      <label className="block text-sm font-medium text-gray-700">
+    <fieldset className={cn('fieldset', className)}>
+      <legend className="fieldset-legend">
         {field.label}
-        {field.required && <span className="text-red-500 ml-1">*</span>}
-      </label>
+        {field.required && <span className="text-error ml-1">*</span>}
+      </legend>
       {field.description && (
-        <p className="text-sm text-gray-500">{field.description}</p>
+        <p className="text-sm text-base-content/70 mb-1">{field.description}</p>
       )}
 
       <div className="space-y-2">
         {items.map((item, index) => (
           <div
             key={index}
-            className="flex items-start gap-2 p-3 bg-gray-50 rounded-md"
+            className="flex items-start gap-2 p-3 bg-base-200 rounded-lg"
           >
-            <GripVertical className="w-4 h-4 text-gray-400 mt-2 cursor-move" />
+            <GripVertical className="w-4 h-4 text-base-content/50 mt-2 cursor-move" />
             <div className="flex-1">
               <FieldRenderer
                 field={field.itemField}
@@ -71,7 +71,7 @@ export function ArrayField({
               type="button"
               onClick={() => removeItem(index)}
               disabled={field.minItems ? items.length <= field.minItems : false}
-              className="p-1 text-gray-400 hover:text-red-500 disabled:opacity-50"
+              className="btn btn-ghost btn-sm btn-square text-base-content/50 hover:text-error"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -83,19 +83,14 @@ export function ArrayField({
         type="button"
         onClick={addItem}
         disabled={field.maxItems ? items.length >= field.maxItems : false}
-        className={cn(
-          'flex items-center gap-1 px-3 py-1.5 text-sm',
-          'border border-dashed border-gray-300 rounded-md',
-          'text-gray-600 hover:border-gray-400 hover:text-gray-700',
-          'disabled:opacity-50 disabled:cursor-not-allowed'
-        )}
+        className="btn btn-outline btn-sm gap-1"
       >
         <Plus className="w-4 h-4" />
         Add item
       </button>
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
-    </div>
+      {error && <p className="text-sm text-error mt-1">{error}</p>}
+    </fieldset>
   );
 }
 

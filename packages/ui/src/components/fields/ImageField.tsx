@@ -86,13 +86,13 @@ export function ImageField({
     : null;
 
   return (
-    <div className={cn('space-y-1', className)}>
-      <label className="block text-sm font-medium text-gray-700">
+    <fieldset className={cn('fieldset', className)}>
+      <legend className="fieldset-legend">
         {field.label}
-        {field.required && <span className="text-red-500 ml-1">*</span>}
-      </label>
+        {field.required && <span className="text-error ml-1">*</span>}
+      </legend>
       {field.description && (
-        <p className="text-sm text-gray-500">{field.description}</p>
+        <p className="text-sm text-base-content/70 mb-1">{field.description}</p>
       )}
 
       <input
@@ -108,14 +108,14 @@ export function ImageField({
           <img
             src={imageUrl || ''}
             alt=""
-            className="max-w-xs max-h-48 rounded-md border border-gray-300"
+            className="max-w-xs max-h-48 rounded-lg border border-base-300"
           />
           <button
             type="button"
             onClick={() => onChange(null)}
-            className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+            className="btn btn-circle btn-error btn-xs absolute -top-2 -right-2"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3 h-3" />
           </button>
         </div>
       ) : (
@@ -125,14 +125,14 @@ export function ImageField({
           disabled={isUploading}
           className={cn(
             'flex items-center justify-center gap-2 w-full py-8',
-            'border-2 border-dashed border-gray-300 rounded-md',
-            'text-gray-500 hover:border-gray-400 hover:text-gray-600',
+            'border-2 border-dashed border-base-300 rounded-lg',
+            'text-base-content/70 hover:border-primary hover:text-primary',
             'transition-colors cursor-pointer',
             isUploading && 'opacity-50 cursor-wait'
           )}
         >
           {isUploading ? (
-            <span>Uploading...</span>
+            <span className="loading loading-spinner loading-sm"></span>
           ) : (
             <>
               <Upload className="w-5 h-5" />
@@ -143,8 +143,8 @@ export function ImageField({
       )}
 
       {(error || uploadError) && (
-        <p className="text-sm text-red-500">{error || uploadError}</p>
+        <p className="text-sm text-error mt-1">{error || uploadError}</p>
       )}
-    </div>
+    </fieldset>
   );
 }

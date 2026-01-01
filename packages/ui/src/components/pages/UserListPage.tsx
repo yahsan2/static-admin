@@ -49,7 +49,7 @@ export function UserListPage() {
         actions={
           <Link
             to="/users/new"
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            className="btn btn-primary btn-sm gap-2"
           >
             <Plus className="w-4 h-4" />
             New User
@@ -59,122 +59,110 @@ export function UserListPage() {
 
       <div className="p-6">
         {/* Table */}
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="card bg-base-100 border border-base-300 overflow-hidden">
           {isLoading ? (
             <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mx-auto" />
+              <span className="loading loading-spinner loading-md"></span>
             </div>
           ) : error ? (
-            <div className="p-8 text-center text-red-500">{error}</div>
+            <div className="p-8 text-center text-error">{error}</div>
           ) : users.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-base-content/70">
               No users found.{' '}
-              <Link to="/users/new" className="text-blue-600 hover:underline">
+              <Link to="/users/new" className="link link-primary">
                 Create one
               </Link>
             </div>
           ) : (
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    Email
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    Name
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    Role
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    Created
-                  </th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {users.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="hover:bg-gray-50 cursor-pointer"
-                    onClick={() => navigate(`/users/${user.id}`)}
-                  >
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {user.email}
-                      {currentUser?.id === user.id && (
-                        <span className="ml-2 text-xs text-gray-400">(you)</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      {user.name || '-'}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                          user.role === 'admin'
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        {user.role === 'admin' ? 'Admin' : 'Editor'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      {formatDate(user.createdAt)}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/users/${user.id}`);
-                          }}
-                          className="p-1 text-gray-400 hover:text-blue-600"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(user.id);
-                          }}
-                          className="p-1 text-gray-400 hover:text-red-600 disabled:opacity-50"
-                          title="Delete"
-                          disabled={currentUser?.id === user.id}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Created</th>
+                    <th className="text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {users.map((user) => (
+                    <tr
+                      key={user.id}
+                      className="hover cursor-pointer"
+                      onClick={() => navigate(`/users/${user.id}`)}
+                    >
+                      <td>
+                        {user.email}
+                        {currentUser?.id === user.id && (
+                          <span className="ml-2 text-xs text-base-content/50">(you)</span>
+                        )}
+                      </td>
+                      <td>{user.name || '-'}</td>
+                      <td>
+                        <span
+                          className={`badge badge-sm ${
+                            user.role === 'admin'
+                              ? 'badge-secondary'
+                              : 'badge-ghost'
+                          }`}
+                        >
+                          {user.role === 'admin' ? 'Admin' : 'Editor'}
+                        </span>
+                      </td>
+                      <td>{formatDate(user.createdAt)}</td>
+                      <td className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/users/${user.id}`);
+                            }}
+                            className="btn btn-ghost btn-sm btn-square"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(user.id);
+                            }}
+                            className="btn btn-ghost btn-sm btn-square hover:text-error"
+                            title="Delete"
+                            disabled={currentUser?.id === user.id}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
           <div className="mt-4 flex items-center justify-between">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-base-content/70">
               Showing {(page - 1) * pagination.limit + 1} -{' '}
               {Math.min(page * pagination.limit, total)} of {total} users
             </p>
-            <div className="flex gap-2">
+            <div className="join">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50"
+                className="join-item btn btn-sm"
               >
                 Previous
               </button>
               <button
                 onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
                 disabled={page === pagination.totalPages}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50"
+                className="join-item btn btn-sm"
               >
                 Next
               </button>

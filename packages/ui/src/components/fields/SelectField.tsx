@@ -27,24 +27,22 @@ export function SelectField({
   };
 
   return (
-    <div className={cn('space-y-1', className)}>
-      <label className="block text-sm font-medium text-gray-700">
+    <fieldset className={cn('fieldset', className)}>
+      <legend className="fieldset-legend">
         {field.label}
-        {field.required && <span className="text-red-500 ml-1">*</span>}
-      </label>
+        {field.required && <span className="text-error ml-1">*</span>}
+      </legend>
       {field.description && (
-        <p className="text-sm text-gray-500">{field.description}</p>
+        <p className="text-sm text-base-content/70 mb-1">{field.description}</p>
       )}
       <select
         value={field.multiple ? (value as string[]) : (value as string)}
         onChange={handleChange}
         multiple={field.multiple}
         className={cn(
-          'block w-full rounded-md border-gray-300 shadow-sm',
-          'focus:border-blue-500 focus:ring-blue-500 sm:text-sm',
-          'px-3 py-2 border',
+          'select select-bordered w-full',
           field.multiple && 'min-h-[120px]',
-          error && 'border-red-500'
+          error && 'select-error'
         )}
       >
         {!field.multiple && !field.required && (
@@ -56,7 +54,7 @@ export function SelectField({
           </option>
         ))}
       </select>
-      {error && <p className="text-sm text-red-500">{error}</p>}
-    </div>
+      {error && <p className="text-sm text-error mt-1">{error}</p>}
+    </fieldset>
   );
 }

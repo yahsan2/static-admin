@@ -39,3 +39,6 @@ export { TipTapEditor } from './components/editor/TipTapEditor';
 export { useCollection } from './hooks/useCollection';
 export { useEntry } from './hooks/useEntry';
 export { useConfig } from './hooks/useConfig';
+
+// UI Components
+export * from './components/ui';
