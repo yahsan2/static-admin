@@ -17,7 +17,7 @@ export interface HeaderProps {
 
 export function Header({ title, breadcrumbs, actions, className }: HeaderProps) {
   return (
-    <header className={cn('bg-base-100 border-b border-base-300 px-6 py-4', className)}>
+    <header className={cn('bg-base-100 border-b border-base-300 px-6 py-3', className)}>
       {/* Title and Breadcrumbs */}
       <div className="flex items-center justify-between">
         {breadcrumbs && breadcrumbs.length > 0 && (

@@ -163,7 +163,7 @@ export function EntryEditPage() {
       </header>
 
       {/* Main content area */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 bg-base-100 overflow-hidden">
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
             <span className="loading loading-spinner loading-md"></span>
