@@ -3,14 +3,14 @@ import { handle } from 'hono/vercel';
 import { createStaticAdmin } from '@static-admin/hono';
 import { defineConfig, collection, fields, type StorageConfig } from '@static-admin/core';
 
-// Storage configuration: GitHub mode when tokens are set, local mode otherwise
-const storage: StorageConfig = process.env.GITHUB_TOKEN && process.env.GITHUB_OWNER && process.env.GITHUB_REPO
+// Storage configuration: GitHub mode when GITHUB_TOKEN is set, local mode otherwise
+const storage: StorageConfig = process.env.GITHUB_TOKEN
   ? {
       kind: 'github',
       contentPath: 'dev/content',
-      owner: process.env.GITHUB_OWNER,
-      repo: process.env.GITHUB_REPO,
-      branch: process.env.GITHUB_BRANCH || 'main',
+      owner: 'yahsan2',
+      repo: 'static-admin',
+      branch: 'main',
       token: process.env.GITHUB_TOKEN,
     }
   : {
