@@ -2,7 +2,7 @@
 title: Sample Post 20
 slug: sample-post-20
 date: '2025-08-20'
-draft: false
+draft: true
 category: life
 tags:
   - sample
