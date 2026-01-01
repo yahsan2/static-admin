@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Save, Trash2, Copy, Eye, ChevronRight } from 'lucide-react';
 import { useEntry } from '../../hooks/useEntry';
 import { useConfig } from '../../hooks/useConfig';
+import { useHmrBlock } from '../../hooks/useHmrBlock';
 import { getDefaultValues } from '../../lib/schema';
 import { FieldRenderer } from '../fields/FieldRenderer';
 import { TipTapEditor } from '../editor/TipTapEditor';
@@ -23,6 +24,7 @@ export function EntryEditPage() {
     collectionName || '',
     slug
   );
+  const { blockHmr } = useHmrBlock();
 
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [content, setContent] = useState('');
@@ -70,8 +72,11 @@ export function EntryEditPage() {
   };
 
   const handleSave = async () => {
-    setIsSaving(true);
     setSaveError(null);
+    blockHmr(2000); // Block HMR reload for 2 seconds after save
+
+    // Show loading spinner only if save takes more than 200ms
+    const loadingTimer = setTimeout(() => setIsSaving(true), 200);
 
     // Find markdoc field
     const markdocField = Object.entries(collection.config.schema).find(
@@ -88,6 +93,7 @@ export function EntryEditPage() {
       content,
     });
 
+    clearTimeout(loadingTimer);
     setIsSaving(false);
 
     if (result) {

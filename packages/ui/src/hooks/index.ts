@@ -12,3 +12,5 @@ export type { UseUsersOptions, UseUsersResult } from './useUsers';
 
 export { useUser } from './useUser';
 export type { UserFormData, UseUserResult } from './useUser';
+
+export { useHmrBlock } from './useHmrBlock';

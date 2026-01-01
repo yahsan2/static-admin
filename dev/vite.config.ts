@@ -3,6 +3,54 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 
+// HMR block state
+let hmrBlockUntil = 0;
+
+// Vite plugin to block HMR during API saves
+function hmrBlockPlugin(): Plugin {
+  return {
+    name: 'hmr-block',
+    configureServer(server) {
+      // Handle HMR block requests
+      server.middlewares.use((req, res, next) => {
+        if (req.url === '/api/admin/hmr-block' && req.method === 'POST') {
+          let body = '';
+          req.on('data', (chunk) => (body += chunk));
+          req.on('end', () => {
+            try {
+              const { duration = 2000 } = JSON.parse(body);
+              hmrBlockUntil = Date.now() + duration;
+              res.statusCode = 200;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: true }));
+            } catch {
+              res.statusCode = 400;
+              res.end(JSON.stringify({ error: 'Invalid request' }));
+            }
+          });
+          return;
+        }
+        next();
+      });
+
+      // Intercept file changes for content directory
+      const originalWatcher = server.watcher;
+      const originalEmit = originalWatcher.emit.bind(originalWatcher);
+
+      originalWatcher.emit = function (event: string, ...args: unknown[]) {
+        if (event === 'change' || event === 'add' || event === 'unlink') {
+          const filePath = args[0] as string;
+          if (filePath.includes('/content/') && Date.now() < hmrBlockUntil) {
+            console.log('[HMR] Blocked reload for:', filePath);
+            return false;
+          }
+        }
+        return originalEmit(event, ...args);
+      };
+    },
+  };
+}
+
 // Vite plugin to integrate Hono API server
 function honoDevServer(): Plugin {
   return {
@@ -65,7 +113,7 @@ function honoDevServer(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), honoDevServer()],
+  plugins: [react(), tailwindcss(), hmrBlockPlugin(), honoDevServer()],
   resolve: {
     alias: {
       '@static-admin/ui': path.resolve(__dirname, '../packages/ui/src'),
