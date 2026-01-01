@@ -12,9 +12,13 @@
     "lint": "turbo lint",
     "format": "oxlint --fix .",
     "clean": "turbo clean && rm -rf node_modules",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "pnpm build && changeset publish"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.29.8",
     "@types/node": "^22.10.0",
     "@vitest/coverage-v8": "^4.0.16",
     "lefthook": "^2.0.13",

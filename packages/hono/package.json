@@ -1,6 +1,16 @@
 {
   "name": "@static-admin/hono",
   "version": "0.1.0",
+  "description": "Hono adapter with auth middleware for Static Admin CMS",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yahsan2/static-admin.git",
+    "directory": "packages/hono"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
