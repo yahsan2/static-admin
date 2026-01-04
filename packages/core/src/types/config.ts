@@ -43,6 +43,20 @@ export interface RemoteDatabaseConfig {
   authToken: string;
 }
 
+/** GitHub OAuth configuration */
+export interface GitHubOAuthConfig {
+  /** GitHub OAuth App Client ID */
+  clientId: string;
+  /** GitHub OAuth App Client Secret */
+  clientSecret: string;
+  /** OAuth callback URL (e.g., https://example.com/api/auth/github/callback) */
+  callbackUrl: string;
+  /** Required scopes (default: ['repo']) */
+  scopes?: string[];
+  /** Allow only collaborators of the target repo to register (default: true) */
+  requireCollaborator?: boolean;
+}
+
 /** Auth configuration */
 export interface AuthConfig {
   /** Path to SQLite database file (for local development) */
@@ -51,6 +65,8 @@ export interface AuthConfig {
   remote?: RemoteDatabaseConfig;
   /** Session expiry in seconds (default: 7 days) */
   sessionExpiry?: number;
+  /** GitHub OAuth configuration */
+  github?: GitHubOAuthConfig;
 }
 
 /** Collection configuration */

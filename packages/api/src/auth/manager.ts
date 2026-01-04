@@ -1,4 +1,14 @@
-import type { AuthManager, User, Session, UserRole, PasswordResetToken, AuthConfig } from './types';
+import type {
+  AuthManager,
+  User,
+  Session,
+  UserRole,
+  PasswordResetToken,
+  AuthConfig,
+  GitHubUserInfo,
+  OAuthToken,
+  AuthProvider,
+} from './types';
 import type { DatabaseAdapter } from './adapters/types';
 import { createDatabaseAdapter } from './adapters';
 import { hashPassword, verifyPassword, generateSessionId, generateToken } from './password';
@@ -10,9 +20,13 @@ const SCHEMA_SQL = `
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
+    password_hash TEXT,
     name TEXT,
     role TEXT DEFAULT 'editor' NOT NULL,
+    auth_provider TEXT DEFAULT 'password' NOT NULL,
+    github_id INTEGER UNIQUE,
+    github_username TEXT,
+    github_avatar_url TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -35,15 +49,40 @@ const SCHEMA_SQL = `
   );
 
   CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires_at ON password_reset_tokens(expires_at);
+
+  CREATE TABLE IF NOT EXISTS oauth_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    provider TEXT NOT NULL DEFAULT 'github',
+    access_token TEXT NOT NULL,
+    scope TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE(user_id, provider)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_oauth_tokens_user_id ON oauth_tokens(user_id);
+
+  CREATE TABLE IF NOT EXISTS oauth_states (
+    state TEXT PRIMARY KEY,
+    redirect_uri TEXT,
+    expires_at DATETIME NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_oauth_states_expires_at ON oauth_states(expires_at);
 `;
 
 // Types for database rows
 interface UserRow {
   id: number;
   email: string;
-  password_hash: string;
+  password_hash: string | null;
   name: string | null;
   role: string;
+  auth_provider: string;
+  github_id: number | null;
+  github_username: string | null;
+  github_avatar_url: string | null;
   created_at: string;
 }
 
@@ -60,7 +99,26 @@ interface SessionWithUserRow {
   email: string;
   name: string | null;
   role: string;
+  auth_provider: string;
+  github_id: number | null;
+  github_username: string | null;
+  github_avatar_url: string | null;
   created_at: string;
+}
+
+interface OAuthTokenRow {
+  id: number;
+  user_id: number;
+  provider: string;
+  access_token: string;
+  scope: string | null;
+  created_at: string;
+}
+
+interface OAuthStateRow {
+  state: string;
+  redirect_uri: string | null;
+  expires_at: string;
 }
 
 interface PasswordResetTokenRow {
@@ -105,11 +163,23 @@ export function createAuthManager(config: AuthConfig): AuthManager {
       // Migration: Add role column if it doesn't exist
       const tableInfo = await db.queryAll<{ name: string }>('PRAGMA table_info(users)');
       const hasRoleColumn = tableInfo.some((col) => col.name === 'role');
+      const hasAuthProviderColumn = tableInfo.some((col) => col.name === 'auth_provider');
+      const hasGitHubIdColumn = tableInfo.some((col) => col.name === 'github_id');
 
       if (!hasRoleColumn) {
         await db.execute(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'editor' NOT NULL`);
         // Set first user as admin (for existing installations)
         await db.execute(`UPDATE users SET role = 'admin' WHERE id = (SELECT MIN(id) FROM users)`);
+      }
+
+      // Migration: Add OAuth columns
+      if (!hasAuthProviderColumn) {
+        await db.execute(`ALTER TABLE users ADD COLUMN auth_provider TEXT DEFAULT 'password' NOT NULL`);
+      }
+      if (!hasGitHubIdColumn) {
+        await db.execute(`ALTER TABLE users ADD COLUMN github_id INTEGER UNIQUE`);
+        await db.execute(`ALTER TABLE users ADD COLUMN github_username TEXT`);
+        await db.execute(`ALTER TABLE users ADD COLUMN github_avatar_url TEXT`);
       }
     },
 
@@ -122,7 +192,7 @@ export function createAuthManager(config: AuthConfig): AuthManager {
       const passwordHash = hashPassword(password);
 
       const result = await db.run(
-        `INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, ?)`,
+        `INSERT INTO users (email, password_hash, name, role, auth_provider) VALUES (?, ?, ?, ?, 'password')`,
         [email, passwordHash, name ?? null, role]
       );
 
@@ -132,13 +202,14 @@ export function createAuthManager(config: AuthConfig): AuthManager {
         name: name ?? null,
         role,
         createdAt: new Date(),
+        authProvider: 'password',
       };
     },
 
     async login(email: string, password: string): Promise<{ user: User; session: Session }> {
       // Get user
       const row = await db.queryOne<UserRow>(
-        `SELECT id, email, password_hash, name, role, created_at FROM users WHERE email = ?`,
+        `SELECT id, email, password_hash, name, role, auth_provider, github_id, github_username, github_avatar_url, created_at FROM users WHERE email = ?`,
         [email]
       );
 
@@ -146,8 +217,8 @@ export function createAuthManager(config: AuthConfig): AuthManager {
         throw new Error('Invalid email or password');
       }
 
-      // Verify password
-      if (!verifyPassword(password, row.password_hash)) {
+      // Verify password (only for password-based users)
+      if (!row.password_hash || !verifyPassword(password, row.password_hash)) {
         throw new Error('Invalid email or password');
       }
 
@@ -167,6 +238,10 @@ export function createAuthManager(config: AuthConfig): AuthManager {
           name: row.name,
           role: row.role as UserRole,
           createdAt: new Date(row.created_at),
+          authProvider: row.auth_provider as AuthProvider,
+          githubId: row.github_id ?? undefined,
+          githubUsername: row.github_username ?? undefined,
+          githubAvatarUrl: row.github_avatar_url ?? undefined,
         },
         session: {
           id: sessionId,
@@ -193,6 +268,10 @@ export function createAuthManager(config: AuthConfig): AuthManager {
           u.email,
           u.name,
           u.role,
+          u.auth_provider,
+          u.github_id,
+          u.github_username,
+          u.github_avatar_url,
           u.created_at
         FROM sessions s
         JOIN users u ON s.user_id = u.id
@@ -211,6 +290,10 @@ export function createAuthManager(config: AuthConfig): AuthManager {
           name: row.name,
           role: row.role as UserRole,
           createdAt: new Date(row.created_at),
+          authProvider: row.auth_provider as AuthProvider,
+          githubId: row.github_id ?? undefined,
+          githubUsername: row.github_username ?? undefined,
+          githubAvatarUrl: row.github_avatar_url ?? undefined,
         },
         session: {
           id: row.session_id,
@@ -247,7 +330,7 @@ export function createAuthManager(config: AuthConfig): AuthManager {
 
     async getUserById(id: number): Promise<User | null> {
       const row = await db.queryOne<UserRow>(
-        `SELECT id, email, name, role, created_at FROM users WHERE id = ?`,
+        `SELECT id, email, name, role, auth_provider, github_id, github_username, github_avatar_url, created_at FROM users WHERE id = ?`,
         [id]
       );
 
@@ -261,12 +344,16 @@ export function createAuthManager(config: AuthConfig): AuthManager {
         name: row.name,
         role: row.role as UserRole,
         createdAt: new Date(row.created_at),
+        authProvider: row.auth_provider as AuthProvider,
+        githubId: row.github_id ?? undefined,
+        githubUsername: row.github_username ?? undefined,
+        githubAvatarUrl: row.github_avatar_url ?? undefined,
       };
     },
 
     async getUserByEmail(email: string): Promise<User | null> {
       const row = await db.queryOne<UserRow>(
-        `SELECT id, email, name, role, created_at FROM users WHERE email = ?`,
+        `SELECT id, email, name, role, auth_provider, github_id, github_username, github_avatar_url, created_at FROM users WHERE email = ?`,
         [email]
       );
 
@@ -280,6 +367,10 @@ export function createAuthManager(config: AuthConfig): AuthManager {
         name: row.name,
         role: row.role as UserRole,
         createdAt: new Date(row.created_at),
+        authProvider: row.auth_provider as AuthProvider,
+        githubId: row.github_id ?? undefined,
+        githubUsername: row.github_username ?? undefined,
+        githubAvatarUrl: row.github_avatar_url ?? undefined,
       };
     },
 
@@ -307,7 +398,7 @@ export function createAuthManager(config: AuthConfig): AuthManager {
 
       // Fetch paginated users
       const rows = await db.queryAll<UserRow>(
-        `SELECT id, email, name, role, created_at FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+        `SELECT id, email, name, role, auth_provider, github_id, github_username, github_avatar_url, created_at FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?`,
         [limit, offset]
       );
 
@@ -318,6 +409,10 @@ export function createAuthManager(config: AuthConfig): AuthManager {
           name: row.name,
           role: row.role as UserRole,
           createdAt: new Date(row.created_at),
+          authProvider: row.auth_provider as AuthProvider,
+          githubId: row.github_id ?? undefined,
+          githubUsername: row.github_username ?? undefined,
+          githubAvatarUrl: row.github_avatar_url ?? undefined,
         })),
         pagination: {
           page,
@@ -368,7 +463,7 @@ export function createAuthManager(config: AuthConfig): AuthManager {
       await db.run(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, values);
 
       const row = await db.queryOne<UserRow>(
-        `SELECT id, email, name, role, created_at FROM users WHERE id = ?`,
+        `SELECT id, email, name, role, auth_provider, github_id, github_username, github_avatar_url, created_at FROM users WHERE id = ?`,
         [userId]
       );
 
@@ -382,6 +477,10 @@ export function createAuthManager(config: AuthConfig): AuthManager {
         name: row.name,
         role: row.role as UserRole,
         createdAt: new Date(row.created_at),
+        authProvider: row.auth_provider as AuthProvider,
+        githubId: row.github_id ?? undefined,
+        githubUsername: row.github_username ?? undefined,
+        githubAvatarUrl: row.github_avatar_url ?? undefined,
       };
     },
 
@@ -457,6 +556,150 @@ export function createAuthManager(config: AuthConfig): AuthManager {
       await db.run(`DELETE FROM sessions WHERE user_id = ?`, [resetToken.userId]);
 
       return true;
+    },
+
+    // OAuth methods
+
+    async getUserByGitHubId(githubId: number): Promise<User | null> {
+      const row = await db.queryOne<UserRow>(
+        `SELECT id, email, name, role, auth_provider, github_id, github_username, github_avatar_url, created_at FROM users WHERE github_id = ?`,
+        [githubId]
+      );
+
+      if (!row) {
+        return null;
+      }
+
+      return {
+        id: row.id,
+        email: row.email,
+        name: row.name,
+        role: row.role as UserRole,
+        createdAt: new Date(row.created_at),
+        authProvider: row.auth_provider as AuthProvider,
+        githubId: row.github_id ?? undefined,
+        githubUsername: row.github_username ?? undefined,
+        githubAvatarUrl: row.github_avatar_url ?? undefined,
+      };
+    },
+
+    async findOrCreateGitHubUser(githubUser: GitHubUserInfo, role: UserRole = 'editor'): Promise<User> {
+      // Check if user already exists by GitHub ID
+      const existingUser = await this.getUserByGitHubId(githubUser.id);
+      if (existingUser) {
+        // Update GitHub info if changed
+        await db.run(
+          `UPDATE users SET github_username = ?, github_avatar_url = ?, name = COALESCE(?, name) WHERE github_id = ?`,
+          [githubUser.login, githubUser.avatar_url, githubUser.name, githubUser.id]
+        );
+        return {
+          ...existingUser,
+          githubUsername: githubUser.login,
+          githubAvatarUrl: githubUser.avatar_url,
+          name: githubUser.name ?? existingUser.name,
+        };
+      }
+
+      // Create new user
+      const email = githubUser.email ?? `${githubUser.login}@github.local`;
+      const result = await db.run(
+        `INSERT INTO users (email, name, role, auth_provider, github_id, github_username, github_avatar_url) VALUES (?, ?, ?, 'github', ?, ?, ?)`,
+        [email, githubUser.name, role, githubUser.id, githubUser.login, githubUser.avatar_url]
+      );
+
+      return {
+        id: Number(result.lastInsertRowid),
+        email,
+        name: githubUser.name,
+        role,
+        createdAt: new Date(),
+        authProvider: 'github',
+        githubId: githubUser.id,
+        githubUsername: githubUser.login,
+        githubAvatarUrl: githubUser.avatar_url,
+      };
+    },
+
+    async storeOAuthToken(userId: number, provider: string, accessToken: string, scope?: string): Promise<void> {
+      // Upsert token (replace if exists)
+      await db.run(
+        `INSERT INTO oauth_tokens (user_id, provider, access_token, scope) VALUES (?, ?, ?, ?)
+         ON CONFLICT(user_id, provider) DO UPDATE SET access_token = ?, scope = ?, created_at = datetime('now')`,
+        [userId, provider, accessToken, scope ?? null, accessToken, scope ?? null]
+      );
+    },
+
+    async getOAuthToken(userId: number, provider: string): Promise<OAuthToken | null> {
+      const row = await db.queryOne<OAuthTokenRow>(
+        `SELECT id, user_id, provider, access_token, scope, created_at FROM oauth_tokens WHERE user_id = ? AND provider = ?`,
+        [userId, provider]
+      );
+
+      if (!row) {
+        return null;
+      }
+
+      return {
+        id: row.id,
+        userId: row.user_id,
+        provider: row.provider,
+        accessToken: row.access_token,
+        scope: row.scope,
+        createdAt: new Date(row.created_at),
+      };
+    },
+
+    async deleteOAuthToken(userId: number, provider: string): Promise<void> {
+      await db.run(`DELETE FROM oauth_tokens WHERE user_id = ? AND provider = ?`, [userId, provider]);
+    },
+
+    async createOAuthState(redirectUri?: string): Promise<string> {
+      // Clean up expired states
+      await db.run(`DELETE FROM oauth_states WHERE expires_at < datetime('now')`);
+
+      const state = generateToken();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+      await db.run(
+        `INSERT INTO oauth_states (state, redirect_uri, expires_at) VALUES (?, ?, ?)`,
+        [state, redirectUri ?? null, expiresAt.toISOString()]
+      );
+
+      return state;
+    },
+
+    async validateOAuthState(state: string): Promise<{ redirectUri: string | null } | null> {
+      const row = await db.queryOne<OAuthStateRow>(
+        `SELECT state, redirect_uri, expires_at FROM oauth_states WHERE state = ? AND expires_at > datetime('now')`,
+        [state]
+      );
+
+      if (!row) {
+        return null;
+      }
+
+      // Delete the used state
+      await db.run(`DELETE FROM oauth_states WHERE state = ?`, [state]);
+
+      return {
+        redirectUri: row.redirect_uri,
+      };
+    },
+
+    async createSessionForUser(userId: number): Promise<Session> {
+      const sessionId = generateSessionId();
+      const expiresAt = new Date(Date.now() + sessionExpiry * 1000);
+
+      await db.run(
+        `INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)`,
+        [sessionId, userId, expiresAt.toISOString()]
+      );
+
+      return {
+        id: sessionId,
+        userId,
+        expiresAt,
+      };
     },
   };
 }

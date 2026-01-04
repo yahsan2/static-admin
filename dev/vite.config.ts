@@ -1,4 +1,4 @@
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig, type Plugin, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
@@ -53,6 +53,10 @@ function hmrBlockPlugin(): Plugin {
 
 // Vite plugin to integrate Hono API server
 function honoDevServer(): Plugin {
+  // Load env vars for SSR (including non-VITE_ prefixed vars)
+  const env = loadEnv('development', process.cwd(), '');
+  Object.assign(process.env, env);
+
   return {
     name: 'hono-dev-server',
     configureServer(server) {

@@ -56,6 +56,7 @@ export function defineConfig<T extends StaticAdminConfig>(config: T): T {
           database: config.auth.database,
           remote: config.auth.remote,
           sessionExpiry: config.auth.sessionExpiry ?? 7 * 24 * 60 * 60, // 7 days
+          github: config.auth.github,
         }
       : undefined,
     collections: config.collections,

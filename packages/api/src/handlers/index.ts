@@ -3,8 +3,10 @@ import * as content from './content';
 import * as upload from './upload';
 import * as auth from './auth';
 import * as users from './users';
+import * as githubOAuth from './github-oauth';
 
 export type { ApiHandlers, ApiContext, ApiRequest, ApiResponse } from './types';
+export { initiateGitHubOAuth, handleGitHubCallback, getGitHubOAuthConfig } from './github-oauth';
 
 /**
  * Create all API handlers

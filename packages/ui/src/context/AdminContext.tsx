@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import type { StaticAdminConfig, Collection, Schema } from '../types';
 
 export type UserRole = 'admin' | 'editor';
+export type AuthProvider = 'password' | 'github';
 
 export interface User {
   id: number;
@@ -9,6 +10,10 @@ export interface User {
   name: string | null;
   role: UserRole;
   createdAt?: Date | string;
+  authProvider?: AuthProvider;
+  githubId?: number;
+  githubUsername?: string;
+  githubAvatarUrl?: string;
 }
 
 export interface AdminContextValue {
@@ -18,7 +23,9 @@ export interface AdminContextValue {
   isLoading: boolean;
   error: string | null;
   needsSetup: boolean;
+  githubOAuthEnabled: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGitHub: () => void;
   logout: () => Promise<void>;
   setupAdmin: (email: string, password: string, name?: string) => Promise<void>;
   fetchApi: <T = unknown>(
@@ -45,6 +52,7 @@ export function AdminProvider({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [needsSetup, setNeedsSetup] = useState(false);
+  const [githubOAuthEnabled, setGitHubOAuthEnabled] = useState(false);
 
   // Fetch wrapper with base path
   const fetchApi = useCallback(
@@ -110,6 +118,12 @@ export function AdminProvider({
           return;
         }
 
+        // Check if GitHub OAuth is enabled
+        const githubConfigResult = await fetchApi<{ enabled: boolean }>('/auth/github/config');
+        if (githubConfigResult.success && githubConfigResult.data?.enabled) {
+          setGitHubOAuthEnabled(true);
+        }
+
         // Then check current session
         const result = await fetchApi<User>('/auth/me');
         if (result.success && result.data) {
@@ -125,7 +139,7 @@ export function AdminProvider({
     checkSession();
   }, [config, fetchApi]);
 
-  // Login
+  // Login with email/password
   const login = useCallback(
     async (email: string, password: string) => {
       setError(null);
@@ -149,6 +163,12 @@ export function AdminProvider({
     },
     [fetchApi]
   );
+
+  // Login with GitHub OAuth
+  const loginWithGitHub = useCallback(() => {
+    // Redirect to GitHub OAuth initiation endpoint
+    window.location.href = `${apiBasePath}/auth/github`;
+  }, [apiBasePath]);
 
   // Logout
   const logout = useCallback(async () => {
@@ -204,7 +224,9 @@ export function AdminProvider({
     isLoading,
     error,
     needsSetup,
+    githubOAuthEnabled,
     login,
+    loginWithGitHub,
     logout,
     setupAdmin,
     fetchApi,

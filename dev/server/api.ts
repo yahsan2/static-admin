@@ -3,6 +3,18 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { createStaticAdmin } from '@static-admin/hono';
 import { defineConfig, collection, fields } from '@static-admin/core';
 
+// GitHub OAuth config (optional - set env vars to enable)
+const githubOAuthConfig = process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+  ? {
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      callbackUrl: process.env.GITHUB_CALLBACK_URL || 'http://localhost:5173/api/admin/auth/github/callback',
+      scopes: ['repo'],
+      // Local dev uses local storage, so skip collaborator check
+      requireCollaborator: false,
+    }
+  : undefined;
+
 // Server-side config with full schema helpers
 export const config = defineConfig({
   storage: {
@@ -16,6 +28,7 @@ export const config = defineConfig({
   auth: {
     database: './admin.db',
     sessionExpiry: 7 * 24 * 60 * 60,
+    github: githubOAuthConfig,
   },
   collections: {
     posts: collection({

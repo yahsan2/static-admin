@@ -1,7 +1,16 @@
 import { Hono } from 'hono';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import type { Context } from 'hono';
-import { createApiHandlers, createAuthManager, createMailService, type ApiContext, type MailService } from '@static-admin/api';
+import {
+  createApiHandlers,
+  createAuthManager,
+  createMailService,
+  initiateGitHubOAuth,
+  handleGitHubCallback,
+  getGitHubOAuthConfig,
+  type ApiContext,
+  type MailService,
+} from '@static-admin/api';
 import { createCMS } from '@static-admin/cms';
 import {
   createStorageAdapter,
@@ -11,6 +20,7 @@ import {
   type Entry,
   type Schema,
   type StorageAdapter,
+  type GitHubStorageConfig,
 } from '@static-admin/core';
 import type { PaginatedResult } from '@static-admin/cms';
 import { authMiddleware, requireAuth, type AuthVariables } from './middleware';
@@ -49,6 +59,31 @@ function createStorageAdapterFromConfig(
     kind: 'local',
     rootDir,
     contentPath: storageConfig.contentPath,
+  });
+}
+
+/**
+ * Create storage adapter with user's OAuth token (for GitHub mode)
+ * Falls back to default storage if user has no OAuth token
+ */
+function createUserStorageAdapter(
+  config: StaticAdminConfig,
+  defaultStorage: StorageAdapter,
+  userToken?: string
+): StorageAdapter {
+  // If no user token or not GitHub storage, use default
+  if (!userToken || config.storage.kind !== 'github') {
+    return defaultStorage;
+  }
+
+  const storageConfig = config.storage as GitHubStorageConfig;
+  return createGitHubStorageAdapter({
+    kind: 'github',
+    owner: storageConfig.owner,
+    repo: storageConfig.repo,
+    branch: storageConfig.branch,
+    contentPath: storageConfig.contentPath,
+    token: userToken,
   });
 }
 
@@ -361,6 +396,61 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
         });
         return c.json(result);
       });
+
+      // GitHub OAuth config endpoint (always available to check if OAuth is enabled)
+      app.get('/auth/github/config', async (c) => {
+        const ctx: ApiContext = { config, auth: auth!, rootDir, storage };
+        const result = await getGitHubOAuthConfig(ctx, { params: {}, query: {}, body: null });
+        return c.json(result);
+      });
+
+      // GitHub OAuth routes (only if configured)
+      if (config.auth?.github) {
+        // Initiate GitHub OAuth
+        app.get('/auth/github', async (c) => {
+          const ctx: ApiContext = { config, auth: auth!, rootDir, storage };
+          const result = await initiateGitHubOAuth(ctx, {
+            params: {},
+            query: c.req.query() as Record<string, string>,
+            body: null,
+          });
+
+          if (result.success && result.data) {
+            return c.redirect(result.data.redirectUrl);
+          }
+
+          return c.json(result, 400);
+        });
+
+        // GitHub OAuth callback
+        app.get('/auth/github/callback', async (c) => {
+          const ctx: ApiContext = { config, auth: auth!, rootDir, storage };
+          const result = await handleGitHubCallback(ctx, {
+            params: {},
+            query: c.req.query() as Record<string, string>,
+            body: null,
+          });
+
+          if (result.success && result.data && 'sessionId' in result.data) {
+            const data = result.data as { sessionId: string; expiresAt: string; redirectUrl?: string };
+            setCookie(c, sessionCookie, data.sessionId, {
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'Lax',
+              path: '/',
+              expires: new Date(data.expiresAt),
+            });
+
+            // Redirect to admin dashboard or custom redirect
+            const redirectUrl = data.redirectUrl ?? '/';
+            return c.redirect(redirectUrl);
+          }
+
+          // Error case - redirect to login with error
+          const error = !result.success ? result.error : 'Unknown error';
+          return c.redirect(`/?error=${encodeURIComponent(error || 'OAuth failed')}`);
+        });
+      }
     }
 
     // ===== Schema Routes =====
@@ -413,7 +503,9 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
       : async (_: unknown, next: () => Promise<void>) => next();
 
     app.post('/entries/:collection', protectedRoutes, async (c) => {
-      const ctx: ApiContext = { config, auth: auth!, rootDir, storage, user: c.get('user') };
+      // Use user's OAuth token for storage if available
+      const userStorage = createUserStorageAdapter(config, storage, c.get('githubToken'));
+      const ctx: ApiContext = { config, auth: auth!, rootDir, storage: userStorage, user: c.get('user') };
       const body = await c.req.json();
       const result = await handlers.createEntry(ctx, {
         params: { collection: c.req.param('collection') },
@@ -424,7 +516,9 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
     });
 
     app.put('/entries/:collection/:slug', protectedRoutes, async (c) => {
-      const ctx: ApiContext = { config, auth: auth!, rootDir, storage, user: c.get('user') };
+      // Use user's OAuth token for storage if available
+      const userStorage = createUserStorageAdapter(config, storage, c.get('githubToken'));
+      const ctx: ApiContext = { config, auth: auth!, rootDir, storage: userStorage, user: c.get('user') };
       const body = await c.req.json();
       const result = await handlers.updateEntry(ctx, {
         params: { collection: c.req.param('collection'), slug: c.req.param('slug') },
@@ -435,7 +529,9 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
     });
 
     app.delete('/entries/:collection/:slug', protectedRoutes, async (c) => {
-      const ctx: ApiContext = { config, auth: auth!, rootDir, storage, user: c.get('user') };
+      // Use user's OAuth token for storage if available
+      const userStorage = createUserStorageAdapter(config, storage, c.get('githubToken'));
+      const ctx: ApiContext = { config, auth: auth!, rootDir, storage: userStorage, user: c.get('user') };
       const result = await handlers.deleteEntry(ctx, {
         params: { collection: c.req.param('collection'), slug: c.req.param('slug') },
         query: {},
@@ -446,7 +542,9 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
 
     // ===== Upload Routes =====
     app.post('/upload/:collection/:slug', protectedRoutes, async (c) => {
-      const ctx: ApiContext = { config, auth: auth!, rootDir, storage, user: c.get('user') };
+      // Use user's OAuth token for storage if available
+      const userStorage = createUserStorageAdapter(config, storage, c.get('githubToken'));
+      const ctx: ApiContext = { config, auth: auth!, rootDir, storage: userStorage, user: c.get('user') };
       const body = await c.req.json();
       const result = await handlers.uploadImage(ctx, {
         params: { collection: c.req.param('collection'), slug: c.req.param('slug') },

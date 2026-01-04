@@ -10,11 +10,13 @@ export interface AuthMiddlewareOptions {
 export interface AuthVariables {
   user?: User;
   sessionId?: string;
+  githubToken?: string;
 }
 
 /**
  * Authentication middleware for Hono
  * Extracts user from session cookie and attaches to context
+ * For GitHub OAuth users, also fetches their OAuth token
  */
 export function authMiddleware(options: AuthMiddlewareOptions) {
   return async (c: Context<{ Variables: AuthVariables }>, next: Next) => {
@@ -31,6 +33,14 @@ export function authMiddleware(options: AuthMiddlewareOptions) {
 
           // Refresh session on each request
           await auth.refreshSession(sessionId);
+
+          // For GitHub OAuth users, fetch their OAuth token
+          if (result.user.authProvider === 'github') {
+            const oauthToken = await auth.getOAuthToken(result.user.id, 'github');
+            if (oauthToken) {
+              c.set('githubToken', oauthToken.accessToken);
+            }
+          }
         }
       } catch {
         // Invalid session, continue without user
