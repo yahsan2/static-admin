@@ -48,14 +48,29 @@ interface GitHubError {
 export function createGitHubStorageAdapter(
   config: GitHubStorageAdapterConfig
 ): StorageAdapter {
-  const { owner, repo, branch = 'main', contentPath, token } = config;
+  const { owner, repo, branch = 'main', contentPath, token, tokenProvider } = config;
   const baseUrl = `https://api.github.com/repos/${owner}/${repo}`;
 
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${token}`,
-    Accept: 'application/vnd.github+json',
-    'X-GitHub-Api-Version': '2022-11-28',
-  };
+  // Validate that either token or tokenProvider is provided
+  if (!token && !tokenProvider) {
+    throw new Error(
+      'GitHub storage requires either a token or tokenProvider. ' +
+        'Set storage.token, storage.tokenProvider, or GITHUB_TOKEN environment variable.'
+    );
+  }
+
+  /**
+   * Get the authorization header with token
+   * Uses tokenProvider if available, otherwise static token
+   */
+  async function getAuthHeaders(): Promise<Record<string, string>> {
+    const authToken = tokenProvider ? await tokenProvider() : token!;
+    return {
+      Authorization: `Bearer ${authToken}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+    };
+  }
 
   // SHA cache to reduce API calls for updates
   const shaCache = new Map<string, string>();
@@ -87,6 +102,7 @@ export function createGitHubStorageAdapter(
     options: RequestInit = {}
   ): Promise<T> {
     const url = endpoint.startsWith('http') ? endpoint : `${baseUrl}${endpoint}`;
+    const headers = await getAuthHeaders();
     const response = await fetch(url, {
       ...options,
       headers: { ...headers, ...(options.headers as Record<string, string>) },

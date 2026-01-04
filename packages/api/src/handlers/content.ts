@@ -5,8 +5,49 @@ import {
   getDefaultValues,
   type EntryData,
   type Schema,
+  type CommitUser,
 } from '@static-admin/core';
-import type { ApiContext, ApiRequest, ApiResponse, ApiHandler } from './types';
+import type { ApiHandler } from './types';
+import type { User } from '../auth/types';
+
+/**
+ * Convert User to CommitUser for commit message attribution
+ */
+function toCommitUser(user?: User): CommitUser | undefined {
+  if (!user) return undefined;
+  return {
+    name: user.name,
+    email: user.email,
+  };
+}
+
+/**
+ * Generate commit message with optional user attribution
+ */
+function generateCommitMessage(
+  config: { git?: { autoCommit?: boolean; commitMessage?: (action: 'create' | 'update' | 'delete', collection: string, slug: string, user?: CommitUser) => string; includeEditorInfo?: boolean } },
+  action: 'create' | 'update' | 'delete',
+  collection: string,
+  slug: string,
+  user?: CommitUser
+): string | undefined {
+  if (!config.git?.autoCommit) {
+    return undefined;
+  }
+
+  // Get base message
+  let message = config.git.commitMessage?.(action, collection, slug, user) ||
+    `${action === 'create' ? 'Create' : action === 'update' ? 'Update' : 'Delete'} ${collection}/${slug}`;
+
+  // Append editor info if enabled (default: true)
+  const includeEditorInfo = config.git.includeEditorInfo !== false;
+  if (includeEditorInfo && user) {
+    const editorName = user.name || user.email.split('@')[0];
+    message += `\n\nEdited by: ${editorName} <${user.email}>`;
+  }
+
+  return message;
+}
 
 /**
  * Get schema definition
@@ -166,7 +207,7 @@ export const getEntry: ApiHandler = async (ctx, req) => {
  * Create a new entry
  */
 export const createEntry: ApiHandler = async (ctx, req) => {
-  const { config, storage, rootDir } = ctx;
+  const { config, storage, rootDir, user } = ctx;
   const { collection: collectionName } = req.params;
   const body = req.body as { fields?: Record<string, unknown>; content?: string; commit?: boolean };
 
@@ -195,11 +236,9 @@ export const createEntry: ApiHandler = async (ctx, req) => {
   const contentManager = new ContentManager({ config, storage });
 
   try {
-    // Generate commit message if git is enabled
-    const commitMessage = config.git?.autoCommit
-      ? config.git.commitMessage?.('create', collectionName, 'new') ||
-        `Create ${collectionName} entry`
-      : undefined;
+    // Generate commit message with user attribution
+    const commitUser = toCommitUser(user);
+    const commitMessage = generateCommitMessage(config, 'create', collectionName, 'new', commitUser);
 
     const entry = await contentManager.createEntry(
       collectionName,
@@ -230,7 +269,7 @@ export const createEntry: ApiHandler = async (ctx, req) => {
  * Update an existing entry
  */
 export const updateEntry: ApiHandler = async (ctx, req) => {
-  const { config, storage, rootDir } = ctx;
+  const { config, storage, rootDir, user } = ctx;
   const { collection: collectionName, slug } = req.params;
   const body = req.body as { fields?: Record<string, unknown>; content?: string; commit?: boolean };
 
@@ -265,11 +304,9 @@ export const updateEntry: ApiHandler = async (ctx, req) => {
   }
 
   try {
-    // Generate commit message
-    const commitMessage = config.git?.autoCommit
-      ? config.git.commitMessage?.('update', collectionName, slug) ||
-        `Update ${collectionName}/${slug}`
-      : undefined;
+    // Generate commit message with user attribution
+    const commitUser = toCommitUser(user);
+    const commitMessage = generateCommitMessage(config, 'update', collectionName, slug, commitUser);
 
     const entry = await contentManager.updateEntry(
       collectionName,
@@ -301,17 +338,15 @@ export const updateEntry: ApiHandler = async (ctx, req) => {
  * Delete an entry
  */
 export const deleteEntry: ApiHandler = async (ctx, req) => {
-  const { config, storage } = ctx;
+  const { config, storage, user } = ctx;
   const { collection: collectionName, slug } = req.params;
 
   const contentManager = new ContentManager({ config, storage });
 
   try {
-    // Generate commit message
-    const commitMessage = config.git?.autoCommit
-      ? config.git.commitMessage?.('delete', collectionName, slug) ||
-        `Delete ${collectionName}/${slug}`
-      : undefined;
+    // Generate commit message with user attribution
+    const commitUser = toCommitUser(user);
+    const commitMessage = generateCommitMessage(config, 'delete', collectionName, slug, commitUser);
 
     await contentManager.deleteEntry(collectionName, slug, commitMessage);
     return { success: true, data: { deleted: true } };

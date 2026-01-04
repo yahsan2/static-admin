@@ -191,8 +191,10 @@ export interface GitHubStorageAdapterConfig {
   branch?: string;
   /** Content path within repository */
   contentPath: string;
-  /** Personal Access Token */
-  token: string;
+  /** Personal Access Token (either token or tokenProvider is required) */
+  token?: string;
+  /** Dynamic token provider (for GitHub App installation tokens) */
+  tokenProvider?: () => Promise<string>;
 }
 
 /**

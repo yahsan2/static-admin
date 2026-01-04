@@ -20,6 +20,7 @@ export type {
   GitConfig,
   AuthConfig,
   RemoteDatabaseConfig,
+  CommitUser,
 } from './types/config';
 
 export type {

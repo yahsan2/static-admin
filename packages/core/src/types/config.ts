@@ -27,12 +27,25 @@ export interface GitHubStorageConfig {
 /** Storage configuration union */
 export type StorageConfig = LocalStorageConfig | GitHubStorageConfig;
 
+/** User info for commit attribution */
+export interface CommitUser {
+  name: string | null;
+  email: string;
+}
+
 /** Git configuration */
 export interface GitConfig {
   /** Enable auto-commit on save */
   autoCommit?: boolean;
   /** Custom commit message template */
-  commitMessage?: (action: 'create' | 'update' | 'delete', collection: string, slug: string) => string;
+  commitMessage?: (
+    action: 'create' | 'update' | 'delete',
+    collection: string,
+    slug: string,
+    user?: CommitUser
+  ) => string;
+  /** Include editor info in commit messages (default: true) */
+  includeEditorInfo?: boolean;
 }
 
 /** Remote database configuration (Turso, libSQL, etc.) */
