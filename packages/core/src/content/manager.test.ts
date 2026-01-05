@@ -205,7 +205,7 @@ describe("ContentManager", () => {
       const result = await manager.listEntries("posts", { search: "hello" });
 
       expect(result.entries).toHaveLength(1);
-      expect(result.entries[0].data.fields.title).toBe("Hello World");
+      expect(result.entries[0]!.data.fields.title).toBe("Hello World");
       expect(result.total).toBe(1);
     });
 
@@ -253,8 +253,8 @@ describe("ContentManager", () => {
 
       const result = await manager.listEntries("posts");
 
-      expect(result.entries[0].data.fields.title).toBe("New Post");
-      expect(result.entries[1].data.fields.title).toBe("Old Post");
+      expect(result.entries[0]!.data.fields.title).toBe("New Post");
+      expect(result.entries[1]!.data.fields.title).toBe("Old Post");
     });
 
     it("should sort entries ascending when specified", async () => {
@@ -279,8 +279,8 @@ describe("ContentManager", () => {
 
       const result = await manager.listEntries("posts", { sortBy: "updatedAt", sortOrder: "asc" });
 
-      expect(result.entries[0].data.fields.title).toBe("Old Post");
-      expect(result.entries[1].data.fields.title).toBe("New Post");
+      expect(result.entries[0]!.data.fields.title).toBe("Old Post");
+      expect(result.entries[1]!.data.fields.title).toBe("New Post");
     });
 
     it("should skip invalid entries silently", async () => {
@@ -302,7 +302,7 @@ describe("ContentManager", () => {
       const result = await manager.listEntries("posts");
 
       expect(result.entries).toHaveLength(1);
-      expect(result.entries[0].slug).toBe("valid-post");
+      expect(result.entries[0]!.slug).toBe("valid-post");
     });
   });
 
@@ -493,7 +493,7 @@ describe("ContentManager", () => {
       const buffer = Buffer.from("fake image data");
       await manager.saveImage("posts", "test", "My Photo.png", buffer);
 
-      const callArgs = (storage.writeBinaryFile as Mock).mock.calls[0];
+      const callArgs = (storage.writeBinaryFile as Mock).mock.calls[0]!;
       const path = callArgs[0] as string;
       expect(path).toMatch(/posts\/test\/images\/my-photo-\d+\.png/);
     });

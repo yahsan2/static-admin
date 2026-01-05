@@ -11,6 +11,7 @@ import { TipTapEditor } from '../editor/TipTapEditor';
 import { SaveStatus } from './entry/SaveStatus';
 import { PublishButtons } from './entry/PublishButtons';
 import { DraftRecoveryAlert } from './entry/DraftRecoveryAlert';
+import type { EntryData, Schema } from '../../types';
 
 export function EntryEditPage() {
   const { collection: collectionName, slug } = useParams<{
@@ -93,8 +94,8 @@ export function EntryEditPage() {
 
   // Prepare save data
   const getSaveData = useCallback(
-    (fieldsOverride?: Record<string, unknown>) => {
-      if (!collection) return { fields: formData, content };
+    (fieldsOverride?: Record<string, unknown>): EntryData<Schema> => {
+      if (!collection) return { fields: formData, content } as EntryData<Schema>;
 
       const markdocFieldName = Object.entries(collection.config.schema).find(
         ([_, f]) => f.type === 'markdoc'
@@ -107,9 +108,9 @@ export function EntryEditPage() {
       }
 
       return {
-        fields: dataToSave as Record<string, unknown>,
+        fields: dataToSave,
         content,
-      };
+      } as EntryData<Schema>;
     },
     [collection, formData, content]
   );

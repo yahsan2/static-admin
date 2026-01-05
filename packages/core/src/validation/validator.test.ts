@@ -383,7 +383,6 @@ describe("validateEntry", () => {
     };
 
     const result = validateEntry(schema, {
-      slug: "test",
       fields: { title: "Hello", published: true },
     });
 
@@ -396,7 +395,6 @@ describe("validateEntry", () => {
     };
 
     const result = validateEntry(schema, {
-      slug: "test",
       fields: {},
     });
 

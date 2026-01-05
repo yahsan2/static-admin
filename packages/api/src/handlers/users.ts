@@ -41,7 +41,7 @@ export const getUser: ApiHandler = async (ctx, req) => {
     return { success: false, error: 'Forbidden: Admin access required' };
   }
 
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id!, 10);
 
   if (isNaN(id)) {
     return { success: false, error: 'Invalid user ID' };
@@ -108,7 +108,7 @@ export const updateUser: ApiHandler = async (ctx, req) => {
     return { success: false, error: 'Forbidden: Admin access required' };
   }
 
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id!, 10);
   const body = req.body as { email?: string; name?: string; role?: UserRole };
 
   if (isNaN(id)) {
@@ -149,7 +149,7 @@ export const deleteUser: ApiHandler = async (ctx, req) => {
     return { success: false, error: 'Forbidden: Admin access required' };
   }
 
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id!, 10);
 
   if (isNaN(id)) {
     return { success: false, error: 'Invalid user ID' };

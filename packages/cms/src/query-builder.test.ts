@@ -34,15 +34,14 @@ function createTestEntry(
 ): Entry<TestSchema> {
   return {
     slug,
+    collection: "posts",
     data: {
-      slug,
       fields: fields as Entry<TestSchema>["data"]["fields"],
     },
-    metadata: {
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-  } as Entry<TestSchema>;
+    filePath: `posts/${slug}.md`,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
 }
 
 describe("QueryBuilder", () => {
@@ -122,7 +121,7 @@ describe("QueryBuilder", () => {
       const result = await builder.all();
 
       expect(result).toHaveLength(2);
-      expect(result[0].slug).toBe("post-1");
+      expect(result[0]!.slug).toBe("post-1");
     });
 
     it("should call contentManager.listEntries with correct options", async () => {
@@ -321,7 +320,7 @@ describe("QueryBuilder", () => {
         .all();
 
       expect(result).toHaveLength(1);
-      expect(result[0].slug).toBe("post-1");
+      expect(result[0]!.slug).toBe("post-1");
     });
   });
 });

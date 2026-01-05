@@ -123,7 +123,7 @@ describe("fields", () => {
       expect(field.type).toBe("select");
       expect(field.label).toBe("Status");
       expect(field.options).toHaveLength(2);
-      expect(field.options[0].value).toBe("draft");
+      expect(field.options[0]!.value).toBe("draft");
     });
 
     it("should support multiple selection", () => {

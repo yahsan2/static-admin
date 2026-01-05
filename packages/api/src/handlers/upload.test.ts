@@ -142,7 +142,7 @@ describe("upload handlers", () => {
       await uploadImage(ctx, req);
 
       // Verify the buffer was created from the base64 data
-      const callArgs = mockSaveImage.mock.calls[0];
+      const callArgs = mockSaveImage.mock.calls[0]!;
       const buffer = callArgs[3] as Buffer;
       expect(Buffer.isBuffer(buffer)).toBe(true);
       // The decoded buffer should match the raw base64 decoded

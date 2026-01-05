@@ -6,7 +6,8 @@ import type { ApiHandler } from './types';
  */
 export const uploadImage: ApiHandler = async (ctx, req) => {
   const { config, storage } = ctx;
-  const { collection: collectionName, slug } = req.params;
+  const collectionName = req.params.collection!;
+  const slug = req.params.slug!;
   const body = req.body as { filename: string; data: string };
 
   if (!body.filename || !body.data) {

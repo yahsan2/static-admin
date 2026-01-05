@@ -13,25 +13,24 @@ import type { AuthManager, User, Session } from "../auth/types";
 
 // Mock user data
 const mockUser: User = {
-  id: "user-1",
+  id: 1,
   email: "test@example.com",
   name: "Test User",
   role: "admin",
   createdAt: new Date("2024-01-01"),
-  updatedAt: new Date("2024-01-01"),
+  authProvider: "password",
 };
 
 const mockSession: Session = {
   id: "session-1",
-  userId: "user-1",
+  userId: 1,
   expiresAt: new Date("2024-12-31"),
-  createdAt: new Date("2024-01-01"),
 };
 
 // Create mock auth manager
 function createMockAuthManager(): AuthManager {
   return {
-    init: vi.fn(),
+    initialize: vi.fn(),
     hasAnyUsers: vi.fn(),
     createUser: vi.fn(),
     login: vi.fn(),
@@ -47,7 +46,16 @@ function createMockAuthManager(): AuthManager {
     countUsersByRole: vi.fn(),
     createPasswordResetToken: vi.fn(),
     resetPasswordWithToken: vi.fn(),
-  };
+    validatePasswordResetToken: vi.fn(),
+    getUserByGitHubId: vi.fn(),
+    findOrCreateGitHubUser: vi.fn(),
+    storeOAuthToken: vi.fn(),
+    getOAuthToken: vi.fn(),
+    deleteOAuthToken: vi.fn(),
+    createSessionForUser: vi.fn(),
+    getGitHubOAuthUrl: vi.fn(),
+    handleGitHubCallback: vi.fn(),
+  } as unknown as AuthManager;
 }
 
 // Create mock mail service
