@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAdmin } from '../../context/AdminContext';
+import { Input } from '../ui/Input';
 
 export function ForgotPasswordPage() {
   const { fetchApi } = useAdmin();
@@ -85,12 +86,11 @@ export function ForgotPasswordPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <fieldset className="fieldset">
               <legend className="fieldset-legend">メールアドレス</legend>
-              <input
+              <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="input input-bordered w-full"
                 placeholder="example@email.com"
               />
             </fieldset>

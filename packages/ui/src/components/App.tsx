@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import type { StaticAdminConfig } from '../types';
 import { AdminProvider, useAdmin } from '../context/AdminContext';
+import { DEFAULT_THEME } from '../lib/constants';
 import { AdminLayout } from './layout/AdminLayout';
 import { CollectionListPage } from './pages/CollectionListPage';
 import { EntryListPage } from './pages/EntryListPage';
@@ -25,7 +26,7 @@ export function StaticAdminApp({
   apiBasePath = '/admin/api',
 }: StaticAdminAppProps) {
   return (
-    <div data-theme="corporate" className="min-h-screen">
+    <div data-theme={DEFAULT_THEME} className="min-h-screen">
       <AdminProvider config={config} apiBasePath={apiBasePath}>
         <BrowserRouter basename={basePath}>
           <AppRoutes />

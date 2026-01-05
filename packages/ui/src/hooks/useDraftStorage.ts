@@ -1,9 +1,10 @@
 import { openDB, type IDBPDatabase } from 'idb';
 import { useMemo } from 'react';
-
-const DB_NAME = 'static-admin-drafts';
-const DB_VERSION = 1;
-const STORE_NAME = 'drafts';
+import {
+  DRAFT_DB_NAME,
+  DRAFT_DB_VERSION,
+  DRAFT_STORE_NAME,
+} from '../lib/constants';
 
 export interface DraftData {
   key: string; // `${collectionName}/${slug}`
@@ -30,10 +31,10 @@ function getDB(): Promise<DraftDB> {
         key: string;
         value: DraftData;
       };
-    }>(DB_NAME, DB_VERSION, {
+    }>(DRAFT_DB_NAME, DRAFT_DB_VERSION, {
       upgrade(db) {
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+        if (!db.objectStoreNames.contains(DRAFT_STORE_NAME)) {
+          db.createObjectStore(DRAFT_STORE_NAME, { keyPath: 'key' });
         }
       },
     });
@@ -62,7 +63,7 @@ async function saveDraft(
     content,
     savedAt: new Date(),
   };
-  await db.put(STORE_NAME, draft);
+  await db.put(DRAFT_STORE_NAME, draft);
 }
 
 async function loadDraft(
@@ -71,7 +72,7 @@ async function loadDraft(
 ): Promise<DraftData | null> {
   const db = await getDB();
   const key = createKey(collectionName, slug);
-  const draft = await db.get(STORE_NAME, key);
+  const draft = await db.get(DRAFT_STORE_NAME, key);
   return draft ?? null;
 }
 
@@ -81,7 +82,7 @@ async function deleteDraft(
 ): Promise<void> {
   const db = await getDB();
   const key = createKey(collectionName, slug);
-  await db.delete(STORE_NAME, key);
+  await db.delete(DRAFT_STORE_NAME, key);
 }
 
 async function hasDraft(
@@ -90,7 +91,7 @@ async function hasDraft(
 ): Promise<boolean> {
   const db = await getDB();
   const key = createKey(collectionName, slug);
-  const draft = await db.get(STORE_NAME, key);
+  const draft = await db.get(DRAFT_STORE_NAME, key);
   return draft !== undefined;
 }
 

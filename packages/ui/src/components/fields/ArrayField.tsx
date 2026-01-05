@@ -1,7 +1,7 @@
 import React from 'react';
 import { Plus, Trash2, GripVertical } from 'lucide-react';
-import type { ArrayField as ArrayFieldType, Field } from '../../types';
-import { FieldRenderer } from './FieldRenderer';
+import type { ArrayField as ArrayFieldType } from '../../types';
+import { FieldRenderer, getFieldDefaultValue } from './FieldRenderer';
 import { cn } from '../../lib/utils';
 
 export interface ArrayFieldProps {
@@ -27,7 +27,7 @@ export function ArrayField({
 
   const addItem = () => {
     if (field.maxItems && items.length >= field.maxItems) return;
-    onChange([...items, getDefaultValue(field.itemField)]);
+    onChange([...items, getFieldDefaultValue(field.itemField)]);
   };
 
   const removeItem = (index: number) => {
@@ -92,29 +92,4 @@ export function ArrayField({
       {error && <p className="text-sm text-error mt-1">{error}</p>}
     </fieldset>
   );
-}
-
-function getDefaultValue(field: Field): unknown {
-  switch (field.type) {
-    case 'text':
-    case 'slug':
-    case 'textarea':
-    case 'markdoc':
-      return '';
-    case 'date':
-    case 'datetime':
-      return '';
-    case 'checkbox':
-      return false;
-    case 'select':
-      return field.multiple ? [] : '';
-    case 'relation':
-      return field.multiple ? [] : '';
-    case 'image':
-      return null;
-    case 'array':
-      return [];
-    default:
-      return '';
-  }
 }
