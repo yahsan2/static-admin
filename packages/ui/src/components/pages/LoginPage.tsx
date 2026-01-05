@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAdmin } from '../../context/AdminContext';
+import { Input } from '../ui/Input';
 
 // GitHub icon component
 function GitHubIcon() {
@@ -34,23 +35,21 @@ export function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <fieldset className="fieldset">
               <legend className="fieldset-legend">Email</legend>
-              <input
+              <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="input input-bordered w-full"
               />
             </fieldset>
 
             <fieldset className="fieldset">
               <legend className="fieldset-legend">Password</legend>
-              <input
+              <Input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="input input-bordered w-full"
               />
             </fieldset>
 

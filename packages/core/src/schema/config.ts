@@ -1,4 +1,4 @@
-import type { StaticAdminConfig } from '../types/config';
+import type { StaticAdminConfig, StaticAdminInputConfig } from '../types/config';
 
 /**
  * Define the static-admin configuration
@@ -33,7 +33,7 @@ import type { StaticAdminConfig } from '../types/config';
  * });
  * ```
  */
-export function defineConfig<T extends StaticAdminConfig>(config: T): T {
+export function defineConfig<T extends StaticAdminInputConfig>(config: T): StaticAdminConfig {
   // Validate and set defaults
   // Preserve full storage config (including kind, owner, repo, etc. for GitHub mode)
   const storageConfig = {
@@ -41,7 +41,7 @@ export function defineConfig<T extends StaticAdminConfig>(config: T): T {
     contentPath: config.storage.contentPath || 'content',
   };
 
-  const finalConfig: StaticAdminConfig = {
+  return {
     storage: storageConfig,
     git: config.git
       ? {
@@ -62,6 +62,4 @@ export function defineConfig<T extends StaticAdminConfig>(config: T): T {
     collections: config.collections,
     singletons: config.singletons,
   };
-
-  return finalConfig as T;
 }

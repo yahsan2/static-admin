@@ -116,7 +116,7 @@ export const listCollections: ApiHandler = async (ctx) => {
  */
 export const getCollection: ApiHandler = async (ctx, req) => {
   const { config } = ctx;
-  const { collection: collectionName } = req.params;
+  const collectionName = req.params.collection!;
 
   const collection = config.collections?.[collectionName];
   if (!collection) {
@@ -141,7 +141,7 @@ export const getCollection: ApiHandler = async (ctx, req) => {
  */
 export const listEntries: ApiHandler = async (ctx, req) => {
   const { config, storage } = ctx;
-  const { collection: collectionName } = req.params;
+  const collectionName = req.params.collection!;
   const { page, limit, sortBy, sortOrder, search } = req.query;
 
   const contentManager = new ContentManager({ config, storage });
@@ -183,7 +183,8 @@ export const listEntries: ApiHandler = async (ctx, req) => {
  */
 export const getEntry: ApiHandler = async (ctx, req) => {
   const { config, storage } = ctx;
-  const { collection: collectionName, slug } = req.params;
+  const collectionName = req.params.collection!;
+  const slug = req.params.slug!;
 
   const contentManager = new ContentManager({ config, storage });
 
@@ -208,7 +209,7 @@ export const getEntry: ApiHandler = async (ctx, req) => {
  */
 export const createEntry: ApiHandler = async (ctx, req) => {
   const { config, storage, rootDir, user } = ctx;
-  const { collection: collectionName } = req.params;
+  const collectionName = req.params.collection!;
   const body = req.body as { fields?: Record<string, unknown>; content?: string; commit?: boolean };
 
   const collection = config.collections?.[collectionName];
@@ -270,7 +271,8 @@ export const createEntry: ApiHandler = async (ctx, req) => {
  */
 export const updateEntry: ApiHandler = async (ctx, req) => {
   const { config, storage, rootDir, user } = ctx;
-  const { collection: collectionName, slug } = req.params;
+  const collectionName = req.params.collection!;
+  const slug = req.params.slug!;
   const body = req.body as { fields?: Record<string, unknown>; content?: string; commit?: boolean };
 
   const collection = config.collections?.[collectionName];
@@ -339,7 +341,8 @@ export const updateEntry: ApiHandler = async (ctx, req) => {
  */
 export const deleteEntry: ApiHandler = async (ctx, req) => {
   const { config, storage, user } = ctx;
-  const { collection: collectionName, slug } = req.params;
+  const collectionName = req.params.collection!;
+  const slug = req.params.slug!;
 
   const contentManager = new ContentManager({ config, storage });
 

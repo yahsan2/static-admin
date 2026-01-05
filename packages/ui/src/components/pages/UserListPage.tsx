@@ -110,7 +110,7 @@ export function UserListPage() {
                           {user.role === 'admin' ? 'Admin' : 'Editor'}
                         </span>
                       </td>
-                      <td>{formatDate(user.createdAt)}</td>
+                      <td>{user.createdAt ? formatDate(user.createdAt) : '-'}</td>
                       <td className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button

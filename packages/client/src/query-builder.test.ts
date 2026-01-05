@@ -10,7 +10,8 @@ type TestSchema = Schema & {
 
 describe("ClientQueryBuilder", () => {
   let options: QueryBuilderOptions;
-  let mockFetch: ReturnType<typeof vi.fn>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockFetch: any;
 
   beforeEach(() => {
     mockFetch = vi.fn().mockResolvedValue({

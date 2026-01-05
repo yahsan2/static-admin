@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAdmin } from '../../context/AdminContext';
+import { Input } from '../ui/Input';
 
 export function ResetPasswordPage() {
   const { fetchApi } = useAdmin();
@@ -101,26 +102,24 @@ export function ResetPasswordPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <fieldset className="fieldset">
               <legend className="fieldset-legend">新しいパスワード</legend>
-              <input
+              <Input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
-                className="input input-bordered w-full"
                 placeholder="8文字以上"
               />
             </fieldset>
 
             <fieldset className="fieldset">
               <legend className="fieldset-legend">パスワード(確認)</legend>
-              <input
+              <Input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength={8}
-                className="input input-bordered w-full"
                 placeholder="もう一度入力"
               />
             </fieldset>

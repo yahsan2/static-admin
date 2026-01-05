@@ -10,7 +10,7 @@ const mockAdminUser: User = {
   name: "Admin User",
   role: "admin",
   createdAt: new Date("2024-01-01"),
-  updatedAt: new Date("2024-01-01"),
+  authProvider: "password",
 };
 
 const mockEditorUser: User = {
@@ -19,13 +19,13 @@ const mockEditorUser: User = {
   name: "Editor User",
   role: "editor",
   createdAt: new Date("2024-01-01"),
-  updatedAt: new Date("2024-01-01"),
+  authProvider: "password",
 };
 
 // Create mock auth manager
 function createMockAuthManager(): AuthManager {
   return {
-    init: vi.fn(),
+    initialize: vi.fn(),
     hasAnyUsers: vi.fn(),
     createUser: vi.fn(),
     login: vi.fn(),
@@ -41,7 +41,16 @@ function createMockAuthManager(): AuthManager {
     countUsersByRole: vi.fn(),
     createPasswordResetToken: vi.fn(),
     resetPasswordWithToken: vi.fn(),
-  };
+    validatePasswordResetToken: vi.fn(),
+    getUserByGitHubId: vi.fn(),
+    findOrCreateGitHubUser: vi.fn(),
+    storeOAuthToken: vi.fn(),
+    getOAuthToken: vi.fn(),
+    deleteOAuthToken: vi.fn(),
+    createSessionForUser: vi.fn(),
+    getGitHubOAuthUrl: vi.fn(),
+    handleGitHubCallback: vi.fn(),
+  } as unknown as AuthManager;
 }
 
 // Create mock context

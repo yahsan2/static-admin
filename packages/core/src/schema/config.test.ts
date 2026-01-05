@@ -170,8 +170,8 @@ describe("defineConfig", () => {
       });
 
       expect(config.collections?.posts).toBeDefined();
-      expect(config.collections?.posts.kind).toBe("collection");
-      expect(config.collections?.posts.config.label).toBe("Posts");
+      expect(config.collections?.posts!.kind).toBe("collection");
+      expect(config.collections?.posts!.config.label).toBe("Posts");
     });
 
     it("should preserve singletons", () => {
@@ -193,7 +193,7 @@ describe("defineConfig", () => {
       });
 
       expect(config.singletons?.settings).toBeDefined();
-      expect(config.singletons?.settings.kind).toBe("singleton");
+      expect(config.singletons?.settings!.kind).toBe("singleton");
     });
   });
 

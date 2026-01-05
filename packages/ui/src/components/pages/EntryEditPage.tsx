@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Trash2, Copy, Eye, AlertTriangle } from 'lucide-react';
+import { Trash2, Copy, Eye } from 'lucide-react';
 import { useEntry } from '../../hooks/useEntry';
 import { useConfig } from '../../hooks/useConfig';
 import { useAutoSave, type SaveOptions } from '../../hooks/useAutoSave';
 import { useDraftStorage, type DraftData } from '../../hooks/useDraftStorage';
 import { getDefaultValues } from '../../lib/schema';
-import { formatRelativeTime } from '../../lib/utils';
 import { FieldRenderer } from '../fields/FieldRenderer';
 import { TipTapEditor } from '../editor/TipTapEditor';
+import { SaveStatus } from './entry/SaveStatus';
+import { PublishButtons } from './entry/PublishButtons';
+import { DraftRecoveryAlert } from './entry/DraftRecoveryAlert';
+import type { EntryData, Schema } from '../../types';
 
 export function EntryEditPage() {
   const { collection: collectionName, slug } = useParams<{
@@ -91,8 +94,8 @@ export function EntryEditPage() {
 
   // Prepare save data
   const getSaveData = useCallback(
-    (fieldsOverride?: Record<string, unknown>) => {
-      if (!collection) return { fields: formData, content };
+    (fieldsOverride?: Record<string, unknown>): EntryData<Schema> => {
+      if (!collection) return { fields: formData, content } as EntryData<Schema>;
 
       const markdocFieldName = Object.entries(collection.config.schema).find(
         ([_, f]) => f.type === 'markdoc'
@@ -105,9 +108,9 @@ export function EntryEditPage() {
       }
 
       return {
-        fields: dataToSave as Record<string, unknown>,
+        fields: dataToSave,
         content,
-      };
+      } as EntryData<Schema>;
     },
     [collection, formData, content]
   );
@@ -253,28 +256,11 @@ export function EntryEditPage() {
 
       {/* Draft Recovery Alert */}
       {pendingDraft && (
-        <div className="alert alert-warning mx-6 mt-4 flex justify-between">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5" />
-            <span>
-              Unsaved draft found ({formatRelativeTime(pendingDraft.savedAt)})
-            </span>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={handleRestoreDraft}
-              className="btn btn-sm btn-warning"
-            >
-              Restore
-            </button>
-            <button
-              onClick={handleDiscardDraft}
-              className="btn btn-sm btn-ghost"
-            >
-              Discard
-            </button>
-          </div>
-        </div>
+        <DraftRecoveryAlert
+          draft={pendingDraft}
+          onRestore={handleRestoreDraft}
+          onDiscard={handleDiscardDraft}
+        />
       )}
 
       {/* Main content */}
@@ -323,122 +309,5 @@ export function EntryEditPage() {
         )}
       </div>
     </div>
-  );
-}
-
-interface SaveStatusProps {
-  isAutoSaving: boolean;
-  hasUnsavedChanges: boolean;
-  lastSavedAt: Date | null;
-  isNew: boolean;
-}
-
-function SaveStatus({
-  isAutoSaving,
-  hasUnsavedChanges,
-  lastSavedAt,
-  isNew,
-}: SaveStatusProps) {
-  if (isAutoSaving) {
-    return (
-      <span className="text-xs text-base-content/50 flex items-center gap-1">
-        <span className="loading loading-spinner loading-xs"></span>
-        Saving...
-      </span>
-    );
-  }
-
-  if (hasUnsavedChanges && !isNew) {
-    return <span className="text-xs text-warning">Unsaved</span>;
-  }
-
-  if (lastSavedAt && !isNew) {
-    return (
-      <span className="text-xs text-base-content/50">
-        Saved {formatRelativeTime(lastSavedAt)}
-      </span>
-    );
-  }
-
-  return null;
-}
-
-interface PublishButtonsProps {
-  isDraft: boolean;
-  isNew: boolean;
-  isDisabled: boolean;
-  isSaving: boolean;
-  onCommit: (fieldsOverride?: Record<string, unknown>) => void;
-}
-
-function PublishButtons({
-  isDraft,
-  isNew,
-  isDisabled,
-  isSaving,
-  onCommit,
-}: PublishButtonsProps) {
-  const spinner = <span className="loading loading-spinner loading-xs"></span>;
-
-  if (isNew) {
-    return (
-      <>
-        <button
-          onClick={() => onCommit({ draft: true })}
-          disabled={isDisabled}
-          className="btn btn-ghost btn-sm"
-        >
-          {isSaving ? spinner : 'Save Draft'}
-        </button>
-        <button
-          onClick={() => onCommit({ draft: false })}
-          disabled={isDisabled}
-          className="btn btn-primary btn-sm"
-        >
-          {isSaving ? spinner : 'Publish'}
-        </button>
-      </>
-    );
-  }
-
-  if (isDraft) {
-    return (
-      <>
-        <button
-          onClick={() => onCommit()}
-          disabled={isDisabled}
-          className="btn btn-ghost btn-sm"
-        >
-          {isSaving ? spinner : 'Save Draft'}
-        </button>
-        <button
-          onClick={() => onCommit({ draft: false })}
-          disabled={isDisabled}
-          className="btn btn-primary btn-sm"
-        >
-          {isSaving ? spinner : 'Publish'}
-        </button>
-      </>
-    );
-  }
-
-  // Published
-  return (
-    <>
-      <button
-        onClick={() => onCommit({ draft: true })}
-        disabled={isDisabled}
-        className="btn btn-ghost btn-sm"
-      >
-        {isSaving ? spinner : 'Unpublish'}
-      </button>
-      <button
-        onClick={() => onCommit()}
-        disabled={isDisabled}
-        className="btn btn-primary btn-sm"
-      >
-        {isSaving ? spinner : 'Update'}
-      </button>
-    </>
   );
 }

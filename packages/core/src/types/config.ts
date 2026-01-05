@@ -8,6 +8,14 @@ export interface LocalStorageConfig {
   contentPath: string;
 }
 
+/** Storage configuration for input (allows optional contentPath with default) */
+export interface LocalStorageInputConfig {
+  /** Storage kind (optional, defaults to 'local') */
+  kind?: 'local';
+  /** Path to content directory relative to project root (defaults to 'content') */
+  contentPath?: string;
+}
+
 /** GitHub API storage configuration */
 export interface GitHubStorageConfig {
   /** Storage kind */
@@ -26,6 +34,9 @@ export interface GitHubStorageConfig {
 
 /** Storage configuration union */
 export type StorageConfig = LocalStorageConfig | GitHubStorageConfig;
+
+/** Storage configuration union for input (allows optional contentPath) */
+export type StorageInputConfig = LocalStorageInputConfig | GitHubStorageConfig;
 
 /** User info for commit attribution */
 export interface CommitUser {
@@ -129,6 +140,23 @@ export interface StaticAdminConfig<
   storage: StorageConfig;
   /** Git integration settings */
   git?: GitConfig;
+  /** Authentication settings */
+  auth?: AuthConfig;
+  /** Collections (multiple entries) */
+  collections?: TCollections;
+  /** Singletons (single entry) */
+  singletons?: TSingletons;
+}
+
+/** Input configuration (allows optional storage.contentPath with default) */
+export interface StaticAdminInputConfig<
+  TCollections extends Record<string, Collection<any>> = Record<string, Collection<any>>,
+  TSingletons extends Record<string, Singleton<any>> = Record<string, Singleton<any>>,
+> {
+  /** Storage settings (contentPath defaults to 'content') */
+  storage: StorageInputConfig;
+  /** Git integration settings */
+  git?: Partial<GitConfig>;
   /** Authentication settings */
   auth?: AuthConfig;
   /** Collections (multiple entries) */

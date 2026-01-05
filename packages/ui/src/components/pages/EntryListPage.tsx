@@ -5,7 +5,6 @@ import { useCollection } from '../../hooks/useCollection';
 import { useConfig } from '../../hooks/useConfig';
 import { useAdmin } from '../../context/AdminContext';
 import { Header } from '../layout/Header';
-import { cn } from '../../lib/utils';
 
 export function EntryListPage() {
   const { collection: collectionName } = useParams<{ collection: string }>();

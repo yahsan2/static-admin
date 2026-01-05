@@ -1,5 +1,9 @@
 export { LoginPage } from './LoginPage';
 export { InstallPage } from './InstallPage';
+export { ForgotPasswordPage } from './ForgotPasswordPage';
+export { ResetPasswordPage } from './ResetPasswordPage';
 export { CollectionListPage } from './CollectionListPage';
 export { EntryListPage } from './EntryListPage';
 export { EntryEditPage } from './EntryEditPage';
+export { UserListPage } from './UserListPage';
+export { UserEditPage } from './UserEditPage';

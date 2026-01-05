@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useHmrBlock } from './useHmrBlock';
 import { useDraftStorage } from './useDraftStorage';
-
-const AUTO_SAVE_DELAY = 5000;
+import {
+  AUTO_SAVE_DELAY_MS,
+  HMR_BLOCK_DURATION_MS,
+  SAVE_LOADING_DELAY_MS,
+} from '../lib/constants';
 
 export interface SaveOptions {
   commit: boolean;
@@ -91,7 +94,7 @@ export function useAutoSave({
     if (hasUnsavedChanges) {
       autoSaveTimerRef.current = setTimeout(() => {
         performAutoSave();
-      }, AUTO_SAVE_DELAY);
+      }, AUTO_SAVE_DELAY_MS);
     }
 
     return () => {
@@ -115,9 +118,9 @@ export function useAutoSave({
       }
 
       setSaveError(null);
-      blockHmr(2000);
+      blockHmr(HMR_BLOCK_DURATION_MS);
 
-      const loadingTimer = setTimeout(() => setIsSaving(true), 200);
+      const loadingTimer = setTimeout(() => setIsSaving(true), SAVE_LOADING_DELAY_MS);
 
       const success = await onSave(dataRef.current, { commit: true, fieldsOverride });
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
+import { Input } from '../ui/Input';
 
 export function InstallPage() {
   const { setupAdmin, error, isLoading } = useAdmin();
@@ -38,48 +39,44 @@ export function InstallPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <fieldset className="fieldset">
               <legend className="fieldset-legend">Name (optional)</legend>
-              <input
+              <Input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="input input-bordered w-full"
                 placeholder="Admin"
               />
             </fieldset>
 
             <fieldset className="fieldset">
               <legend className="fieldset-legend">Email</legend>
-              <input
+              <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="input input-bordered w-full"
                 placeholder="admin@example.com"
               />
             </fieldset>
 
             <fieldset className="fieldset">
               <legend className="fieldset-legend">Password</legend>
-              <input
+              <Input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
-                className="input input-bordered w-full"
                 placeholder="At least 8 characters"
               />
             </fieldset>
 
             <fieldset className="fieldset">
               <legend className="fieldset-legend">Confirm Password</legend>
-              <input
+              <Input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="input input-bordered w-full"
               />
             </fieldset>
 
