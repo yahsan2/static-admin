@@ -172,9 +172,6 @@ importers:
       better-sqlite3:
         specifier: ^11.7.0
         version: 11.10.0
-      jsonwebtoken:
-        specifier: ^9.0.2
-        version: 9.0.3
       nodemailer:
         specifier: ^7.0.12
         version: 7.0.12
@@ -182,9 +179,6 @@ importers:
       '@types/better-sqlite3':
         specifier: ^7.6.12
         version: 7.6.13
-      '@types/jsonwebtoken':
-        specifier: ^9.0.9
-        version: 9.0.10
       '@types/nodemailer':
         specifier: ^7.0.4
         version: 7.0.4
@@ -271,7 +265,7 @@ importers:
     dependencies:
       '@hookform/resolvers':
         specifier: ^3.9.0
-        version: 3.10.0(react-hook-form@7.69.0(react@19.2.3))
+        version: 3.10.0(react-hook-form@7.70.0(react@18.3.1))
       '@static-admin/core':
         specifier: workspace:*
         version: link:../core
@@ -289,7 +283,7 @@ importers:
         version: 2.27.1
       '@tiptap/react':
         specifier: ^2.10.0
-        version: 2.27.1(@tiptap/core@2.27.1(@tiptap/pm@2.27.1))(@tiptap/pm@2.27.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        version: 2.27.1(@tiptap/core@2.27.1(@tiptap/pm@2.27.1))(@tiptap/pm@2.27.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tiptap/starter-kit':
         specifier: ^2.10.0
         version: 2.27.1
@@ -301,22 +295,22 @@ importers:
         version: 8.0.3
       lucide-react:
         specifier: ^0.468.0
-        version: 0.468.0(react@19.2.3)
+        version: 0.468.0(react@18.3.1)
       marked:
         specifier: ^17.0.1
         version: 17.0.1
       react:
         specifier: ^18.0.0 || ^19.0.0
-        version: 19.2.3
+        version: 18.3.1
       react-dom:
         specifier: ^18.0.0 || ^19.0.0
-        version: 19.2.3(react@19.2.3)
+        version: 18.3.1(react@18.3.1)
       react-hook-form:
         specifier: ^7.54.0
-        version: 7.69.0(react@19.2.3)
+        version: 7.70.0(react@18.3.1)
       react-router-dom:
         specifier: ^7.1.0
-        version: 7.11.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        version: 7.11.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       tailwind-merge:
         specifier: ^2.6.0
         version: 2.6.0
@@ -370,8 +364,8 @@ packages:
   '@aws-crypto/util@5.2.0':
     resolution: {integrity: sha512-4RkU9EsI6ZpBve5fseQlGNUWKMa1RLPQ1dnjnQoe07ldfIzcsGb5hC5W0Dm7u423KWzawlrpbjXBrXCEv9zazQ==}
 
-  '@aws-sdk/client-sesv2@3.958.0':
-    resolution: {integrity: sha512-3x3n8IIxIMAkdpt9wy9zS7MO2lqTcJwQTdHMn6BlD7YUohb+r5Q4KCOEQ2uHWd4WIJv2tlbXnfypHaXReO/WXA==}
+  '@aws-sdk/client-sesv2@3.962.0':
+    resolution: {integrity: sha512-1kQdfoQJmE+FgMnIrhzayP4leKhuAPxpAjmYVRgRhlS8nsOawwnNn+7k6/R0nYFAtCUrUUHOvNxwNUuYDHJ9Pg==}
     engines: {node: '>=18.0.0'}
 
   '@aws-sdk/client-sso@3.958.0':
@@ -390,16 +384,16 @@ packages:
     resolution: {integrity: sha512-8dS55QHRxXgJlHkEYaCGZIhieCs9NU1HU1BcqQ4RfUdSsfRdxxktqUKgCnBnOOn0oD3PPA8cQOCAVgIyRb3Rfw==}
     engines: {node: '>=18.0.0'}
 
-  '@aws-sdk/credential-provider-ini@3.958.0':
-    resolution: {integrity: sha512-u7twvZa1/6GWmPBZs6DbjlegCoNzNjBsMS/6fvh5quByYrcJr/uLd8YEr7S3UIq4kR/gSnHqcae7y2nL2bqZdg==}
+  '@aws-sdk/credential-provider-ini@3.962.0':
+    resolution: {integrity: sha512-h0kVnXLW2d3nxbcrR/Pfg3W/+YoCguasWz7/3nYzVqmdKarGrpJzaFdoZtLgvDSZ8VgWUC4lWOTcsDMV0UNqUQ==}
     engines: {node: '>=18.0.0'}
 
-  '@aws-sdk/credential-provider-login@3.958.0':
-    resolution: {integrity: sha512-sDwtDnBSszUIbzbOORGh5gmXGl9aK25+BHb4gb1aVlqB+nNL2+IUEJA62+CE55lXSH8qXF90paivjK8tOHTwPA==}
+  '@aws-sdk/credential-provider-login@3.962.0':
+    resolution: {integrity: sha512-kHYH6Av2UifG3mPkpPUNRh/PuX6adaAcpmsclJdHdxlixMCRdh8GNeEihq480DC0GmfqdpoSf1w2CLmLLPIS6w==}
     engines: {node: '>=18.0.0'}
 
-  '@aws-sdk/credential-provider-node@3.958.0':
-    resolution: {integrity: sha512-vdoZbNG2dt66I7EpN3fKCzi6fp9xjIiwEA/vVVgqO4wXCGw8rKPIdDUus4e13VvTr330uQs2W0UNg/7AgtquEQ==}
+  '@aws-sdk/credential-provider-node@3.962.0':
+    resolution: {integrity: sha512-CS78NsWRxLa+nWqeWBEYMZTLacMFIXs1C5WJuM9kD05LLiWL32ksljoPsvNN24Bc7rCSQIIMx/U3KGvkDVZMVg==}
     engines: {node: '>=18.0.0'}
 
   '@aws-sdk/credential-provider-process@3.957.0':
@@ -1838,9 +1832,6 @@ packages:
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
 
-  '@types/jsonwebtoken@9.0.10':
-    resolution: {integrity: sha512-asx5hIG9Qmf/1oStypjanR7iKTv0gXQ1Ov/jfrX6kS/EO0OFni8orbmGCn0672NHR3kXHwpAwR+B368ZGN/2rA==}
-
   '@types/linkify-it@5.0.0':
     resolution: {integrity: sha512-sVDA58zAw4eWAffKOaQH5/5j3XeayukzDk+ewSsnv3p4yJEZHCCzMDiZM8e0OUrRvmpGZ85jf4yDHkHsgBNr9Q==}
 
@@ -1849,9 +1840,6 @@ packages:
 
   '@types/mdurl@2.0.0':
     resolution: {integrity: sha512-RGdgjQUZba5p6QEFAVx2OGb8rQDL/cPRG7GiedRzMcJ1tYnUANBncjbSB1NRGwbvjcPeikRABz2nshyPk1bhWg==}
-
-  '@types/ms@2.1.0':
-    resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
 
   '@types/node@12.20.55':
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
@@ -2118,9 +2106,6 @@ packages:
   buffer-crc32@0.2.13:
     resolution: {integrity: sha512-VO9Ht/+p3SN7SKWqcrgEzjGbRSJYTx+Q1pTQC0wrWqHx0vpJraQ6GtHx8tvcg1rlK1byhU5gccxgOgj7B0TDkQ==}
 
-  buffer-equal-constant-time@1.0.1:
-    resolution: {integrity: sha512-zRpUiDwd/xk6ADqPMATG8vc9VPrkck7T07OIx0gnjmJAnHnTVXNQG3vfvWNuiZIkwu9KrKdA1iJKfsfTVxE6NA==}
-
   buffer@5.7.1:
     resolution: {integrity: sha512-EHcyIPBQ4BSGlvjB16k5KgAJ27CIsHY/2JBmCRReo48y9rQ3MaUzWX3KVlBa4U7MyX02HdVj0K7C3WaB3ju7FQ==}
 
@@ -2308,9 +2293,6 @@ packages:
   dir-glob@3.0.1:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
     engines: {node: '>=8'}
-
-  ecdsa-sig-formatter@1.0.11:
-    resolution: {integrity: sha512-nagl3RYrbNv6kQkeJIpt6NJZy8twLB/2vtz6yN9Z4vRKHN4/QZJIEbqohALSgwKdnksuY3k5Addp5lg8sVoVcQ==}
 
   edge-runtime@2.5.9:
     resolution: {integrity: sha512-pk+k0oK0PVXdlT4oRp4lwh+unuKB7Ng4iZ2HB+EZ7QCEQizX360Rp/F4aRpgpRgdP2ufB35N+1KppHmYjqIGSg==}
@@ -2815,16 +2797,6 @@ packages:
   jsonfile@6.2.0:
     resolution: {integrity: sha512-FGuPw30AdOIUTRMC2OMRtQV+jkVj2cfPqSeWXv1NEAJ1qZ5zb1X6z1mFhbfOB/iy3ssJCD+3KuZ8r8C3uVFlAg==}
 
-  jsonwebtoken@9.0.3:
-    resolution: {integrity: sha512-MT/xP0CrubFRNLNKvxJ2BYfy53Zkm++5bX9dtuPbqAeQpTVe0MQTFhao8+Cp//EmJp244xt6Drw/GVEGCUj40g==}
-    engines: {node: '>=12', npm: '>=6'}
-
-  jwa@2.0.1:
-    resolution: {integrity: sha512-hRF04fqJIP8Abbkq5NKGN0Bbr3JxlQ+qhZufXVr0DvujKy93ZCbXZMHDL4EOtodSbCWxOqR8MS1tXA5hwqCXDg==}
-
-  jws@4.0.1:
-    resolution: {integrity: sha512-EKI/M/yqPncGUUh44xz0PxSidXFr/+r0pA70+gIYhjv+et7yxM+s29Y+VGDkovRofQem0fs7Uvf4+YmAdyRduA==}
-
   kind-of@6.0.3:
     resolution: {integrity: sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==}
     engines: {node: '>=0.10.0'}
@@ -2885,6 +2857,7 @@ packages:
 
   libsql@0.4.7:
     resolution: {integrity: sha512-T9eIRCs6b0J1SHKYIvD8+KCJMcWZ900iZyxdnSCdqxN12Z1ijzT+jY5nrk72Jw4B0HGzms2NgpryArlJqvc3Lw==}
+    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lightningcss-android-arm64@1.30.2:
@@ -2977,27 +2950,6 @@ packages:
   locate-path@5.0.0:
     resolution: {integrity: sha512-t7hw9pI+WvuwNJXwk5zVHpyhIqzg2qTlklJOf0mVxGSbe3Fp2VieZcduNYjaLDoy6p9uGpQEGWG87WpMKlNq8g==}
     engines: {node: '>=8'}
-
-  lodash.includes@4.3.0:
-    resolution: {integrity: sha512-W3Bx6mdkRTGtlJISOvVD/lbqjTlPPUDTMnlXZFnVwi9NKJ6tiAk6LVdlhZMm17VZisqhKcgzpO5Wz91PCt5b0w==}
-
-  lodash.isboolean@3.0.3:
-    resolution: {integrity: sha512-Bz5mupy2SVbPHURB98VAcw+aHh4vRV5IPNhILUCsOzRmsTmSQ17jIuqopAentWoehktxGd9e/hbIXq980/1QJg==}
-
-  lodash.isinteger@4.0.4:
-    resolution: {integrity: sha512-DBwtEWN2caHQ9/imiNeEA5ys1JoRtRfY3d7V9wkqtbycnAmTvRRmbHKDV4a0EYc678/dia0jrte4tjYwVBaZUA==}
-
-  lodash.isnumber@3.0.3:
-    resolution: {integrity: sha512-QYqzpfwO3/CWf3XP+Z+tkQsfaLL/EnUlXWVkIk5FUPc4sBdTehEqZONuyRt2P67PXAk+NXmTBcc97zw9t1FQrw==}
-
-  lodash.isplainobject@4.0.6:
-    resolution: {integrity: sha512-oSXzaWypCMHkPC3NvBEaPHf0KsA5mvPrOPgQWDsbg8n7orZ290M0BmC/jgRZ4vcJ6DTAhjrsSYgdsW/F+MFOBA==}
-
-  lodash.isstring@4.0.1:
-    resolution: {integrity: sha512-0wJxfxH1wgO3GrbuP+dTTk7op+6L41QCXbGINEmD+ny/G/eCqGzxyCsh7159S+mgDDcoarnBw6PC1PS5+wUGgw==}
-
-  lodash.once@4.1.1:
-    resolution: {integrity: sha512-Sb487aTOCr9drQVL8pIxOzVhafOjZN9UU54hiN8PU3uAiSV7lx1yYNpbNmex2PK6dSJoNTSJUUswT651yww3Mg==}
 
   lodash.startcase@4.4.0:
     resolution: {integrity: sha512-+WKqsK294HMSc2jEbNgpHpd0JfIBhp7rEV4aqXWqFr6AlXov+SlcgB1Fv01y2kGe3Gc8nMW7VA0SrGuSkRfIEg==}
@@ -3463,13 +3415,8 @@ packages:
     peerDependencies:
       react: ^18.3.1
 
-  react-dom@19.2.3:
-    resolution: {integrity: sha512-yELu4WmLPw5Mr/lmeEpox5rw3RETacE++JgHqQzd2dg+YbJuat3jH4ingc+WPZhxaoFzdv9y33G+F7Nl5O0GBg==}
-    peerDependencies:
-      react: ^19.2.3
-
-  react-hook-form@7.69.0:
-    resolution: {integrity: sha512-yt6ZGME9f4F6WHwevrvpAjh42HMvocuSnSIHUGycBqXIJdhqGSPQzTpGF+1NLREk/58IdPxEMfPcFCjlMhclGw==}
+  react-hook-form@7.70.0:
+    resolution: {integrity: sha512-COOMajS4FI3Wuwrs3GPpi/Jeef/5W1DRR84Yl5/ShlT3dKVFUfoGiEZ/QE6Uw8P4T2/CLJdcTVYKvWBMQTEpvw==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       react: ^16.8.0 || ^17 || ^18 || ^19
@@ -3510,10 +3457,6 @@ packages:
 
   react@18.3.1:
     resolution: {integrity: sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==}
-    engines: {node: '>=0.10.0'}
-
-  react@19.2.3:
-    resolution: {integrity: sha512-Ku/hhYbVjOQnXDZFv2+RibmLFGwFdeeKHFcOTlrt7xplBnya5OGn/hIRDsqDiSUcfORsDC7MPxwork8jBwsIWA==}
     engines: {node: '>=0.10.0'}
 
   read-yaml-file@1.1.0:
@@ -3570,9 +3513,6 @@ packages:
   scheduler@0.23.2:
     resolution: {integrity: sha512-UOShsPwz7NrMUqhR6t0hWjFduvOzbtv7toDH1/hIrfRNIDBnnBWd0CwJTGvTpngVlmwGCdP9/Zl/tVrDqcuYzQ==}
 
-  scheduler@0.27.0:
-    resolution: {integrity: sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==}
-
   section-matter@1.0.0:
     resolution: {integrity: sha512-vfD3pmTzGpufjScBh50YHKzEu2lxBWhVEHsNGoEXmCmn2hKGfeNLYMzCJpe8cD7gqX7TJluOVpBkAequ6dgMmA==}
     engines: {node: '>=4'}
@@ -3617,6 +3557,10 @@ packages:
 
   signal-exit@4.0.2:
     resolution: {integrity: sha512-MY2/qGx4enyjprQnFaZsHib3Yadh3IXyV2C321GY0pjGfVBu4un0uDJkwgdxqO+Rdx8JMT8IfJIRwbYVz3Ob3Q==}
+    engines: {node: '>=14'}
+
+  signal-exit@4.1.0:
+    resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
 
   simple-concat@1.0.1:
@@ -4141,12 +4085,12 @@ snapshots:
       '@smithy/util-utf8': 2.3.0
       tslib: 2.8.1
 
-  '@aws-sdk/client-sesv2@3.958.0':
+  '@aws-sdk/client-sesv2@3.962.0':
     dependencies:
       '@aws-crypto/sha256-browser': 5.2.0
       '@aws-crypto/sha256-js': 5.2.0
       '@aws-sdk/core': 3.957.0
-      '@aws-sdk/credential-provider-node': 3.958.0
+      '@aws-sdk/credential-provider-node': 3.962.0
       '@aws-sdk/middleware-host-header': 3.957.0
       '@aws-sdk/middleware-logger': 3.957.0
       '@aws-sdk/middleware-recursion-detection': 3.957.0
@@ -4266,12 +4210,12 @@ snapshots:
       '@smithy/util-stream': 4.5.8
       tslib: 2.8.1
 
-  '@aws-sdk/credential-provider-ini@3.958.0':
+  '@aws-sdk/credential-provider-ini@3.962.0':
     dependencies:
       '@aws-sdk/core': 3.957.0
       '@aws-sdk/credential-provider-env': 3.957.0
       '@aws-sdk/credential-provider-http': 3.957.0
-      '@aws-sdk/credential-provider-login': 3.958.0
+      '@aws-sdk/credential-provider-login': 3.962.0
       '@aws-sdk/credential-provider-process': 3.957.0
       '@aws-sdk/credential-provider-sso': 3.958.0
       '@aws-sdk/credential-provider-web-identity': 3.958.0
@@ -4285,7 +4229,7 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/credential-provider-login@3.958.0':
+  '@aws-sdk/credential-provider-login@3.962.0':
     dependencies:
       '@aws-sdk/core': 3.957.0
       '@aws-sdk/nested-clients': 3.958.0
@@ -4298,11 +4242,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/credential-provider-node@3.958.0':
+  '@aws-sdk/credential-provider-node@3.962.0':
     dependencies:
       '@aws-sdk/credential-provider-env': 3.957.0
       '@aws-sdk/credential-provider-http': 3.957.0
-      '@aws-sdk/credential-provider-ini': 3.958.0
+      '@aws-sdk/credential-provider-ini': 3.962.0
       '@aws-sdk/credential-provider-process': 3.957.0
       '@aws-sdk/credential-provider-sso': 3.958.0
       '@aws-sdk/credential-provider-web-identity': 3.958.0
@@ -4951,9 +4895,9 @@ snapshots:
     dependencies:
       hono: 4.11.3
 
-  '@hookform/resolvers@3.10.0(react-hook-form@7.69.0(react@19.2.3))':
+  '@hookform/resolvers@3.10.0(react-hook-form@7.70.0(react@18.3.1))':
     dependencies:
-      react-hook-form: 7.69.0(react@19.2.3)
+      react-hook-form: 7.70.0(react@18.3.1)
 
   '@inquirer/external-editor@1.0.3(@types/node@22.19.3)':
     dependencies:
@@ -5767,7 +5711,7 @@ snapshots:
       prosemirror-transform: 1.10.5
       prosemirror-view: 1.41.4
 
-  '@tiptap/react@2.27.1(@tiptap/core@2.27.1(@tiptap/pm@2.27.1))(@tiptap/pm@2.27.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
+  '@tiptap/react@2.27.1(@tiptap/core@2.27.1(@tiptap/pm@2.27.1))(@tiptap/pm@2.27.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@tiptap/core': 2.27.1(@tiptap/pm@2.27.1)
       '@tiptap/extension-bubble-menu': 2.27.1(@tiptap/core@2.27.1(@tiptap/pm@2.27.1))(@tiptap/pm@2.27.1)
@@ -5775,9 +5719,9 @@ snapshots:
       '@tiptap/pm': 2.27.1
       '@types/use-sync-external-store': 0.0.6
       fast-deep-equal: 3.1.3
-      react: 19.2.3
-      react-dom: 19.2.3(react@19.2.3)
-      use-sync-external-store: 1.6.0(react@19.2.3)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      use-sync-external-store: 1.6.0(react@18.3.1)
 
   '@tiptap/starter-kit@2.27.1':
     dependencies:
@@ -5856,11 +5800,6 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
-  '@types/jsonwebtoken@9.0.10':
-    dependencies:
-      '@types/ms': 2.1.0
-      '@types/node': 22.19.3
-
   '@types/linkify-it@5.0.0': {}
 
   '@types/markdown-it@14.1.2':
@@ -5869,8 +5808,6 @@ snapshots:
       '@types/mdurl': 2.0.0
 
   '@types/mdurl@2.0.0': {}
-
-  '@types/ms@2.1.0': {}
 
   '@types/node@12.20.55': {}
 
@@ -5882,7 +5819,7 @@ snapshots:
 
   '@types/nodemailer@7.0.4':
     dependencies:
-      '@aws-sdk/client-sesv2': 3.958.0
+      '@aws-sdk/client-sesv2': 3.962.0
       '@types/node': 22.19.3
     transitivePeerDependencies:
       - aws-crt
@@ -6300,8 +6237,6 @@ snapshots:
 
   buffer-crc32@0.2.13: {}
 
-  buffer-equal-constant-time@1.0.1: {}
-
   buffer@5.7.1:
     dependencies:
       base64-js: 1.5.1
@@ -6433,10 +6368,6 @@ snapshots:
   dir-glob@3.0.1:
     dependencies:
       path-type: 4.0.0
-
-  ecdsa-sig-formatter@1.0.11:
-    dependencies:
-      safe-buffer: 5.2.1
 
   edge-runtime@2.5.9:
     dependencies:
@@ -6938,30 +6869,6 @@ snapshots:
     optionalDependencies:
       graceful-fs: 4.2.11
 
-  jsonwebtoken@9.0.3:
-    dependencies:
-      jws: 4.0.1
-      lodash.includes: 4.3.0
-      lodash.isboolean: 3.0.3
-      lodash.isinteger: 4.0.4
-      lodash.isnumber: 3.0.3
-      lodash.isplainobject: 4.0.6
-      lodash.isstring: 4.0.1
-      lodash.once: 4.1.1
-      ms: 2.1.3
-      semver: 7.7.3
-
-  jwa@2.0.1:
-    dependencies:
-      buffer-equal-constant-time: 1.0.1
-      ecdsa-sig-formatter: 1.0.11
-      safe-buffer: 5.2.1
-
-  jws@4.0.1:
-    dependencies:
-      jwa: 2.0.1
-      safe-buffer: 5.2.1
-
   kind-of@6.0.3: {}
 
   lefthook-darwin-arm64@2.0.13:
@@ -7085,20 +6992,6 @@ snapshots:
     dependencies:
       p-locate: 4.1.0
 
-  lodash.includes@4.3.0: {}
-
-  lodash.isboolean@3.0.3: {}
-
-  lodash.isinteger@4.0.4: {}
-
-  lodash.isnumber@3.0.3: {}
-
-  lodash.isplainobject@4.0.6: {}
-
-  lodash.isstring@4.0.1: {}
-
-  lodash.once@4.1.1: {}
-
   lodash.startcase@4.4.0: {}
 
   loose-envify@1.4.0:
@@ -7115,9 +7008,9 @@ snapshots:
     dependencies:
       yallist: 4.0.0
 
-  lucide-react@0.468.0(react@19.2.3):
+  lucide-react@0.468.0(react@18.3.1):
     dependencies:
-      react: 19.2.3
+      react: 18.3.1
 
   magic-string@0.30.21:
     dependencies:
@@ -7556,14 +7449,9 @@ snapshots:
       react: 18.3.1
       scheduler: 0.23.2
 
-  react-dom@19.2.3(react@19.2.3):
+  react-hook-form@7.70.0(react@18.3.1):
     dependencies:
-      react: 19.2.3
-      scheduler: 0.27.0
-
-  react-hook-form@7.69.0(react@19.2.3):
-    dependencies:
-      react: 19.2.3
+      react: 18.3.1
 
   react-refresh@0.17.0: {}
 
@@ -7574,30 +7462,28 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       react-router: 6.30.2(react@18.3.1)
 
-  react-router-dom@7.11.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
+  react-router-dom@7.11.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
-      react: 19.2.3
-      react-dom: 19.2.3(react@19.2.3)
-      react-router: 7.11.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-router: 7.11.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   react-router@6.30.2(react@18.3.1):
     dependencies:
       '@remix-run/router': 1.23.1
       react: 18.3.1
 
-  react-router@7.11.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
+  react-router@7.11.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       cookie: 1.1.1
-      react: 19.2.3
+      react: 18.3.1
       set-cookie-parser: 2.7.2
     optionalDependencies:
-      react-dom: 19.2.3(react@19.2.3)
+      react-dom: 18.3.1(react@18.3.1)
 
   react@18.3.1:
     dependencies:
       loose-envify: 1.4.0
-
-  react@19.2.3: {}
 
   read-yaml-file@1.1.0:
     dependencies:
@@ -7670,8 +7556,6 @@ snapshots:
     dependencies:
       loose-envify: 1.4.0
 
-  scheduler@0.27.0: {}
-
   section-matter@1.0.0:
     dependencies:
       extend-shallow: 2.0.1
@@ -7703,6 +7587,8 @@ snapshots:
 
   signal-exit@4.0.2: {}
 
+  signal-exit@4.1.0: {}
+
   simple-concat@1.0.1: {}
 
   simple-get@4.0.1:
@@ -7730,7 +7616,7 @@ snapshots:
   spawndamnit@3.0.1:
     dependencies:
       cross-spawn: 7.0.6
-      signal-exit: 4.0.2
+      signal-exit: 4.1.0
 
   sprintf-js@1.0.3: {}
 
@@ -8005,9 +7891,9 @@ snapshots:
     dependencies:
       punycode: 2.3.1
 
-  use-sync-external-store@1.6.0(react@19.2.3):
+  use-sync-external-store@1.6.0(react@18.3.1):
     dependencies:
-      react: 19.2.3
+      react: 18.3.1
 
   util-deprecate@1.0.2: {}
 
