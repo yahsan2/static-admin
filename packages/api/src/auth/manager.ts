@@ -379,6 +379,19 @@ export function createAuthManager(config: AuthConfig): AuthManager {
       await db.run(`UPDATE users SET password_hash = ? WHERE id = ?`, [passwordHash, userId]);
     },
 
+    async verifyPassword(userId: number, password: string): Promise<boolean> {
+      const row = await db.queryOne<UserRow>(
+        `SELECT password_hash FROM users WHERE id = ?`,
+        [userId]
+      );
+
+      if (!row || !row.password_hash) {
+        return false;
+      }
+
+      return verifyPassword(password, row.password_hash);
+    },
+
     async deleteUser(userId: number): Promise<void> {
       // Sessions will be deleted via ON DELETE CASCADE
       await db.run(`DELETE FROM users WHERE id = ?`, [userId]);

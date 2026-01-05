@@ -7,31 +7,31 @@ import {
   setupAdmin,
   requestPasswordReset,
   resetPassword,
+  changePassword,
 } from "./auth";
 import type { ApiContext, ApiRequest } from "./types";
 import type { AuthManager, User, Session } from "../auth/types";
 
 // Mock user data
 const mockUser: User = {
-  id: "user-1",
+  id: 1,
   email: "test@example.com",
   name: "Test User",
   role: "admin",
   createdAt: new Date("2024-01-01"),
-  updatedAt: new Date("2024-01-01"),
+  authProvider: "password",
 };
 
 const mockSession: Session = {
   id: "session-1",
-  userId: "user-1",
+  userId: 1,
   expiresAt: new Date("2024-12-31"),
-  createdAt: new Date("2024-01-01"),
 };
 
 // Create mock auth manager
 function createMockAuthManager(): AuthManager {
   return {
-    init: vi.fn(),
+    initialize: vi.fn(),
     hasAnyUsers: vi.fn(),
     createUser: vi.fn(),
     login: vi.fn(),
@@ -41,12 +41,22 @@ function createMockAuthManager(): AuthManager {
     getUserById: vi.fn(),
     getUserByEmail: vi.fn(),
     updatePassword: vi.fn(),
+    verifyPassword: vi.fn(),
     deleteUser: vi.fn(),
     listUsers: vi.fn(),
     updateUser: vi.fn(),
     countUsersByRole: vi.fn(),
     createPasswordResetToken: vi.fn(),
+    validatePasswordResetToken: vi.fn(),
     resetPasswordWithToken: vi.fn(),
+    getUserByGitHubId: vi.fn(),
+    findOrCreateGitHubUser: vi.fn(),
+    storeOAuthToken: vi.fn(),
+    getOAuthToken: vi.fn(),
+    deleteOAuthToken: vi.fn(),
+    createOAuthState: vi.fn(),
+    validateOAuthState: vi.fn(),
+    createSessionForUser: vi.fn(),
   };
 }
 
@@ -502,6 +512,145 @@ describe("auth handlers", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Database error");
+    });
+  });
+
+  describe("changePassword", () => {
+    it("should return error when not authenticated", async () => {
+      const ctx = createMockContext({ user: undefined });
+      const req = createMockRequest({
+        body: { currentPassword: "oldpass123", newPassword: "newpass123" },
+      });
+
+      const result = await changePassword(ctx, req);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Not authenticated");
+    });
+
+    it("should return error when currentPassword is missing", async () => {
+      const ctx = createMockContext({ user: mockUser });
+      const req = createMockRequest({
+        body: { newPassword: "newpass123" },
+      });
+
+      const result = await changePassword(ctx, req);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Current password and new password are required");
+    });
+
+    it("should return error when newPassword is missing", async () => {
+      const ctx = createMockContext({ user: mockUser });
+      const req = createMockRequest({
+        body: { currentPassword: "oldpass123" },
+      });
+
+      const result = await changePassword(ctx, req);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Current password and new password are required");
+    });
+
+    it("should return error when newPassword is too short", async () => {
+      const ctx = createMockContext({ user: mockUser });
+      const req = createMockRequest({
+        body: { currentPassword: "oldpass123", newPassword: "short" },
+      });
+
+      const result = await changePassword(ctx, req);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("New password must be at least 8 characters");
+    });
+
+    it("should return error when new password is same as current", async () => {
+      const ctx = createMockContext({ user: mockUser });
+      const req = createMockRequest({
+        body: { currentPassword: "samepassword", newPassword: "samepassword" },
+      });
+
+      const result = await changePassword(ctx, req);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("New password must be different from current password");
+    });
+
+    it("should return error for GitHub OAuth users", async () => {
+      const githubUser: User = {
+        ...mockUser,
+        authProvider: "github",
+      };
+      const ctx = createMockContext({ user: githubUser });
+      const req = createMockRequest({
+        body: { currentPassword: "oldpass123", newPassword: "newpass123" },
+      });
+
+      const result = await changePassword(ctx, req);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Password change is not available for GitHub OAuth users");
+    });
+
+    it("should return error when current password is incorrect", async () => {
+      const ctx = createMockContext({ user: mockUser });
+      (ctx.auth.verifyPassword as Mock).mockResolvedValue(false);
+
+      const req = createMockRequest({
+        body: { currentPassword: "wrongpassword", newPassword: "newpass123" },
+      });
+
+      const result = await changePassword(ctx, req);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Current password is incorrect");
+      expect(ctx.auth.verifyPassword).toHaveBeenCalledWith(mockUser.id, "wrongpassword");
+    });
+
+    it("should change password successfully", async () => {
+      const ctx = createMockContext({ user: mockUser });
+      (ctx.auth.verifyPassword as Mock).mockResolvedValue(true);
+      (ctx.auth.updatePassword as Mock).mockResolvedValue(undefined);
+
+      const req = createMockRequest({
+        body: { currentPassword: "oldpass123", newPassword: "newpass123" },
+      });
+
+      const result = await changePassword(ctx, req);
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({ message: "Password has been changed successfully" });
+      expect(ctx.auth.verifyPassword).toHaveBeenCalledWith(mockUser.id, "oldpass123");
+      expect(ctx.auth.updatePassword).toHaveBeenCalledWith(mockUser.id, "newpass123");
+    });
+
+    it("should return error on failure", async () => {
+      const ctx = createMockContext({ user: mockUser });
+      (ctx.auth.verifyPassword as Mock).mockResolvedValue(true);
+      (ctx.auth.updatePassword as Mock).mockRejectedValue(new Error("Database error"));
+
+      const req = createMockRequest({
+        body: { currentPassword: "oldpass123", newPassword: "newpass123" },
+      });
+
+      const result = await changePassword(ctx, req);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Database error");
+    });
+
+    it("should handle non-Error exceptions", async () => {
+      const ctx = createMockContext({ user: mockUser });
+      (ctx.auth.verifyPassword as Mock).mockRejectedValue("string error");
+
+      const req = createMockRequest({
+        body: { currentPassword: "oldpass123", newPassword: "newpass123" },
+      });
+
+      const result = await changePassword(ctx, req);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Failed to change password");
     });
   });
 });

@@ -210,3 +210,50 @@ export const resetPassword: ApiHandler = async (ctx, req) => {
     };
   }
 };
+
+/**
+ * Change password for authenticated user
+ */
+export const changePassword: ApiHandler = async (ctx, req) => {
+  const { auth, user } = ctx;
+  const body = req.body as { currentPassword?: string; newPassword?: string };
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  if (!body.currentPassword || !body.newPassword) {
+    return { success: false, error: 'Current password and new password are required' };
+  }
+
+  if (body.newPassword.length < 8) {
+    return { success: false, error: 'New password must be at least 8 characters' };
+  }
+
+  if (body.currentPassword === body.newPassword) {
+    return { success: false, error: 'New password must be different from current password' };
+  }
+
+  // GitHub OAuth users cannot change password
+  if (user.authProvider === 'github') {
+    return { success: false, error: 'Password change is not available for GitHub OAuth users' };
+  }
+
+  try {
+    // Verify current password
+    const isValid = await auth.verifyPassword(user.id, body.currentPassword);
+    if (!isValid) {
+      return { success: false, error: 'Current password is incorrect' };
+    }
+
+    // Update password
+    await auth.updatePassword(user.id, body.newPassword);
+
+    return { success: true, data: { message: 'Password has been changed successfully' } };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to change password',
+    };
+  }
+};

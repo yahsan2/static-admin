@@ -69,6 +69,9 @@ export interface AuthManager {
   /** Update user password */
   updatePassword(userId: number, newPassword: string): Promise<void>;
 
+  /** Verify user's current password */
+  verifyPassword(userId: number, password: string): Promise<boolean>;
+
   /** Delete user */
   deleteUser(userId: number): Promise<void>;
 

@@ -85,4 +85,7 @@ export interface ApiHandlers {
   // Password Reset
   requestPasswordReset: ApiHandler;
   resetPassword: ApiHandler;
+
+  // Password Change (authenticated)
+  changePassword: ApiHandler;
 }

@@ -354,6 +354,13 @@ export function createStaticAdmin<T extends StaticAdminConfig<any, any>>(
         return c.json(result);
       });
 
+      app.post('/auth/change-password', requireAuth(), async (c) => {
+        const body = await c.req.json();
+        const ctx: ApiContext = { config, auth: auth!, rootDir, storage, user: c.get('user') };
+        const result = await handlers.changePassword(ctx, { params: {}, query: {}, body });
+        return c.json(result);
+      });
+
       // User management routes
       app.get('/users', requireAuth(), async (c) => {
         const ctx: ApiContext = { config, auth: auth!, rootDir, storage, user: c.get('user') };

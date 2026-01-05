@@ -75,7 +75,13 @@ function createMockDatabaseAdapter(): DatabaseAdapter & {
 
       if (sql.includes("FROM users WHERE id = ?")) {
         const id = params?.[0] as number;
-        return users.get(id) as T;
+        const user = users.get(id);
+        if (!user) return undefined;
+        // If only selecting password_hash, return just that
+        if (sql.includes("SELECT password_hash FROM users")) {
+          return { password_hash: user.password_hash } as T;
+        }
+        return user as T;
       }
 
       if (sql.includes("FROM sessions") && sql.includes("JOIN users")) {
@@ -486,6 +492,37 @@ describe("createAuthManager", () => {
       // Should be able to login with new password
       const result = await manager.login("test@example.com", "newpassword456");
       expect(result.user.email).toBe("test@example.com");
+    });
+  });
+
+  describe("verifyPassword", () => {
+    it("should return true for correct password", async () => {
+      const manager = createAuthManager({ database: "./test.db" });
+      await manager.initialize();
+      const user = await manager.createUser("test@example.com", "password123");
+
+      const result = await manager.verifyPassword(user.id, "password123");
+
+      expect(result).toBe(true);
+    });
+
+    it("should return false for incorrect password", async () => {
+      const manager = createAuthManager({ database: "./test.db" });
+      await manager.initialize();
+      const user = await manager.createUser("test@example.com", "password123");
+
+      const result = await manager.verifyPassword(user.id, "wrongpassword");
+
+      expect(result).toBe(false);
+    });
+
+    it("should return false for non-existent user", async () => {
+      const manager = createAuthManager({ database: "./test.db" });
+      await manager.initialize();
+
+      const result = await manager.verifyPassword(999, "password123");
+
+      expect(result).toBe(false);
     });
   });
 

@@ -49,5 +49,8 @@ export function createApiHandlers(): ApiHandlers {
     // Password Reset
     requestPasswordReset: auth.requestPasswordReset,
     resetPassword: auth.resetPassword,
+
+    // Password Change (authenticated)
+    changePassword: auth.changePassword,
   };
 }
